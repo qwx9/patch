@@ -1,0 +1,12 @@
+diff -r 2579c34216f2 sys/src/cmd/page.c
+--- a/sys/src/cmd/page.c	Tue Jul 05 23:21:36 2016 -0500
++++ b/sys/src/cmd/page.c	Fri Jul 08 10:02:17 2016 +0200
+@@ -436,7 +436,7 @@
+ 		"/\\<itemref/{"
+ 		"if(match($0, /idref\\=\\\"([^\\\"]+)\\\"/)){"
+ 		"ref=substr($0, RSTART+7, RLENGTH-8);"
+-		"print item[ref]; fflush}}'");
++		"print item[ref]}}'");
+ 	s = strrchr(buf, '/')+1;
+ 	while((n = read(fd, s, e-s)) > 0){
+ 		while(n > 0 && s[n-1] == '\n')

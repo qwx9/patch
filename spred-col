@@ -1,0 +1,38 @@
+diff -r 4136602b93e9 sys/src/cmd/spred/cmdw.c
+--- a/sys/src/cmd/spred/cmdw.c	Wed Nov 14 11:33:52 2018 -0800
++++ b/sys/src/cmd/spred/cmdw.c	Fri Nov 23 17:25:25 2018 +0100
+@@ -332,9 +332,11 @@
+ 	.rmb = cmdrmb,
+ 	.key = cmdkey,
+ 	.hexcols = {
+-		[BORD] DPurpleblue,
+-		[DISB] 0xCCCCEEFF,
+-		[BACK] 0xCCFFFFFF,
+-		[HIGH] DPalegreygreen
++		[BORD] 0x440000FF,
++		[TEXT] 0x770000FF,
++		[DISB] 0x111111FF,
++		[BACK] 0x000000FF,
++		[HIGH] 0x111111FF,
++		[HTEXT] 0x770000FF,
+ 	}
+ };
+diff -r 4136602b93e9 sys/src/cmd/spred/win.c
+--- a/sys/src/cmd/spred/win.c	Wed Nov 14 11:33:52 2018 -0800
++++ b/sys/src/cmd/spred/win.c	Fri Nov 23 17:25:25 2018 +0100
+@@ -38,6 +38,7 @@
+ 	scr = allocscreen(screen, display->white, 0);
+ 	if(scr == nil)
+ 		sysfatal("allocscreen: %r");
++	draw(screen, screen->r, display->black, nil, ZP);
+ 	for(i = 0; i < NTYPES; i++)
+ 		for(j = 0; j < NCOLS; j++)
+ 			tabs[i]->cols[j] = allocimage(display, Rect(0, 0, 1, 1), screen->chan, 1, tabs[i]->hexcols[j]);
+@@ -254,6 +255,7 @@
+ 	scr = allocscreen(screen, display->white, 0);
+ 	if(scr == nil)
+ 		sysfatal("allocscreen: %r");
++	draw(screen, screen->r, display->black, nil, ZP);
+ 	for(w = wlist.next; w != &wlist; w = w->next){
+ 		r = rectsubpt(w->entire, old.min);
+ 		r.min.x = muldiv(r.min.x, dxn, dxo);

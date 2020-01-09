@@ -1,0 +1,57 @@
+diff -r 813115218568 sys/src/cmd/page.c
+--- a/sys/src/cmd/page.c	Tue Jan 19 13:06:22 2016 +0100
++++ b/sys/src/cmd/page.c	Sat Jan 23 01:35:43 2016 +0100
+@@ -67,6 +67,7 @@
+ 	Cfitheight,
+ 	Crotate90,
+ 	Cupsidedown,
++	Cinv,
+ 	Cdummy1,
+ 	Cnext,
+ 	Cprev,
+@@ -91,6 +92,7 @@
+ 	[Cfitheight]	"fit height",	'h', 0, 0,
+ 	[Crotate90]	"rotate 90",	'r', 0, 0,
+ 	[Cupsidedown]	"upside down",	'u', 0, 0,
++	[Cinv]		"invert",	'i', 0, 0,
+ 	[Cdummy1]	"",		0, 0, 0,
+ 	[Cnext]		"next",		Kright, ' ', '\n', 
+ 	[Cprev]		"prev",		Kleft, Kbs, 0,
+@@ -1375,6 +1377,23 @@
+ }
+ 
+ void
++inv(Image *i)
++{
++	int n;
++	uchar *buf, *p;
++
++	n = imagesize(i);
++	buf = malloc(n);
++	if(buf == 0)
++		return;
++	unloadimage(i, i->r, buf, n);
++	for(p=buf; p<buf+n; p++)
++		*p = ~*p;
++	loadimage(i, i->r, buf, n);
++	free(buf);
++}
++
++void
+ showext(Page *p)
+ {
+ 	char label[64], *argv[4];
+@@ -1494,6 +1513,13 @@
+ 		resize = subpt(screen->r.max, screen->r.min);
+ 		resize.x = 0;
+ 		goto Unload;
++	case Cinv:
++		if(current == nil || !canqlock(current))
++			break;
++		inv(current->image);
++		drawpage(current);
++		qunlock(current);
++		break;
+ 	case Czoomin:
+ 	case Czoomout:
+ 		if(current == nil || !canqlock(current))

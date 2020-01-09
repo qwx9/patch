@@ -1,0 +1,103 @@
+diff -r 02682c97b28d sys/src/games/midi.c
+--- a/sys/src/games/midi.c	Fri Sep 29 21:19:12 2017 +0200
++++ b/sys/src/games/midi.c	Sat Sep 30 14:21:21 2017 +0200
+@@ -13,11 +13,13 @@
+ 
+ typedef struct Tracker Tracker;
+ 
+-int fd, ofd, div, tempo = 500000, ntrack;
++int fd, ofd, div, tempo = 500000, ntrack, debug;
+ uvlong T;
+ int freq[128];
+ uchar out[8192], *outp = out;
+ 
++#define dprint	if(debug)fprint
++
+ void *
+ emallocz(int size)
+ {
+@@ -149,9 +151,10 @@
+ readevent(Tracker *src)
+ {
+ 	uvlong l;
+-	int n,t;
++	int c,t,n,v;
+ 	
+-	l = tconv(getvar(src));
++	c = getvar(src);
++	l = tconv(c);
+ 	run(src->t += l);
+ 	t = get8(src);
+ 	if((t & 0x80) == 0){
+@@ -164,35 +167,46 @@
+ 	switch(t >> 4){
+ 	case 0x8:
+ 		n = get8(src);
+-		get8(src);
++		v = get8(src);
++		dprint(2, "t%zd %d c%d off %d %d\n", src-tr, c, t&15, n, v);
+ 		src->notes[t & 15][n] = 0;
+ 		break;
+ 	case 0x9:
+ 		n = get8(src);
+-		src->notes[t & 15][n] = get8(src);
++		v = get8(src);
++		dprint(2, "t%zd %d c%d on %d %d\n", src-tr, c, t&15, n, v);
++		src->notes[t & 15][n] = v;
+ 		break;
+ 	case 0xB:
+-		get16(src);
++		n = get8(src);
++		v = get8(src);
++		dprint(2, "t%zd %d c%d ctl %d %d\n", src-tr, c, t&15, n, v);
+ 		break;
+ 	case 0xC:
+-		get8(src);
++		n = get8(src);
++		dprint(2, "t%zd %d c%d bank %d\n", src-tr, c, t&15, n);
+ 		break;
+ 	case 0xE:
+-		get16(src);
++		n = get8(src);
++		n = get8(src) << 7 | n & 0x7f;
++		dprint(2, "t%zd %d c%d bend %d\n", src-tr, c, t&15, n);
+ 		break;
+ 	case 0xF:
+ 		t = get8(src);
+ 		n = get8(src);
+ 		switch(t){
+ 		case 0x2F:
++			dprint(2, "t%zd %d eot\n", src-tr, c);
+ 			src->ended = 1;
+ 			break;
+ 		case 0x51:
+ 			tempo = get16(src) << 8;
+ 			tempo |= get8(src);
++			dprint(2, "t%zd %d tempo %d\n", src-tr, c, tempo);
+ 			break;
+ 		case 5:
+-			write(2, src->data, n);
++			if(!debug)
++				write(2, src->data, n);
+ 			skip(src, n);
+ 			break;
+ 		default:
+@@ -217,6 +231,9 @@
+ 	case 'c':
+ 		ofd = 1;
+ 		break;
++	case 'v':
++		debug = 1;
++		break;
+ 	}ARGEND;
+ 	if(*argv != nil)
+ 		fd = open(*argv, OREAD);
+@@ -229,6 +246,8 @@
+ 	get16(nil);
+ 	ntrack = get16(nil);
+ 	div = get16(nil);
++	if(debug)
++		fprint(2, "div %d\n", div);
+ 	tr = emallocz(ntrack * sizeof(*tr));
+ 	for(i = 0; i < ntrack; i++){
+ 		if(get32(nil) != 0x4D54726B)

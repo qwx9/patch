@@ -1,0 +1,70 @@
+samterm color patch.
+
+diff -r 0dbb01291c38 sys/src/cmd/samterm/flayer.c
+--- a/sys/src/cmd/samterm/flayer.c	Thu Jan 07 15:04:56 2016 -0500
++++ b/sys/src/cmd/samterm/flayer.c	Sun Jan 10 20:31:20 2016 +0100
+@@ -29,18 +29,18 @@
+ 	lDrect = r;
+ 
+ 	/* Main text is yellowish */
+-	maincols[BACK] = allocimagemix(display, DPaleyellow, DWhite);
+-	maincols[HIGH] = allocimage(display, Rect(0,0,1,1), screen->chan, 1, DDarkyellow);
+-	maincols[BORD] = allocimage(display, Rect(0,0,2,2), screen->chan, 1, DYellowgreen);
+-	maincols[TEXT] = display->black;
+-	maincols[HTEXT] = display->black;
++	maincols[BACK] = display->black;
++	maincols[HIGH] = allocimage(display, Rect(0,0,1,1), screen->chan, 1, 0x440000FF);
++	maincols[BORD] = allocimage(display, Rect(0,0,2,2), screen->chan, 1, 0x222222FF);
++	maincols[TEXT] = allocimage(display, Rect(0,0,1,1), screen->chan, 1, 0x884400FF);
++	maincols[HTEXT] = allocimage(display, Rect(0,0,1,1), screen->chan, 1, 0x884400FF);
+ 
+ 	/* Command text is blueish */
+-	cmdcols[BACK] = allocimagemix(display, DPalebluegreen, DWhite);
+-	cmdcols[HIGH] = allocimage(display, Rect(0,0,1,1), screen->chan, 1, DPalegreygreen);
+-	cmdcols[BORD] = allocimage(display, Rect(0,0,2,2), screen->chan, 1, DPurpleblue);
+-	cmdcols[TEXT] = display->black;
+-	cmdcols[HTEXT] = display->black;
++	cmdcols[BACK] = display->black;
++	cmdcols[HIGH] = allocimage(display, Rect(0,0,1,1), screen->chan, 1, 0x111111FF);
++	cmdcols[BORD] = allocimage(display, Rect(0,0,2,2), screen->chan, 1, 0x440000FF);
++	cmdcols[TEXT] = allocimage(display, Rect(0,0,1,1), screen->chan, 1, 0x770000FF);
++	cmdcols[HTEXT] = allocimage(display, Rect(0,0,1,1), screen->chan, 1, 0x770000FF);
+ }
+ 
+ void
+@@ -89,12 +89,12 @@
+ flclose(Flayer *l)
+ {
+ 	if(l->visible == All)
+-		draw(screen, l->entire, display->white, nil, ZP);
++		draw(screen, l->entire, display->black, nil, ZP);
+ 	else if(l->visible == Some){
+ 		if(l->f.b == 0)
+ 			l->f.b = allocimage(display, l->entire, screen->chan, 0, DNofill);
+ 		if(l->f.b){
+-			draw(l->f.b, l->entire, display->white, nil, ZP);
++			draw(l->f.b, l->entire, display->black, nil, ZP);
+ 			flrefresh(l, l->entire, 0);
+ 		}
+ 	}
+@@ -353,7 +353,7 @@
+ 	if(0 && Dx(dr)==Dx(olDrect) && Dy(dr)==Dy(olDrect))
+ 		move = 1;
+ 	else
+-		draw(screen, lDrect, display->white, nil, ZP);
++		draw(screen, lDrect, display->black, nil, ZP);
+ 	for(i=0; i<nllist; i++){
+ 		l = llist[i];
+ 		l->lastsr = ZR;
+diff -r 0dbb01291c38 sys/src/cmd/samterm/plan9.c
+--- a/sys/src/cmd/samterm/plan9.c	Thu Jan 07 15:04:56 2016 -0500
++++ b/sys/src/cmd/samterm/plan9.c	Sun Jan 10 20:31:20 2016 +0100
+@@ -46,7 +46,7 @@
+ 	if(t != nil)
+ 		maxtab = strtoul(t, nil, 0);
+ 	free(t);
+-	draw(screen, screen->clipr, display->white, nil, ZP);
++	draw(screen, screen->clipr, display->black, nil, ZP);
+ }
+ 
+ int

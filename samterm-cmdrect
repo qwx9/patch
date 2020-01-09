@@ -1,0 +1,14 @@
+diff -r 16e46e6fee1e sys/src/cmd/samterm/main.c
+--- a/sys/src/cmd/samterm/main.c	Thu Oct 05 20:33:46 2017 +0200
++++ b/sys/src/cmd/samterm/main.c	Sat Oct 07 06:32:03 2017 +0200
+@@ -42,7 +42,9 @@
+ 	scratch = alloc(100*RUNESIZE);
+ 	nscralloc = 100;
+ 	r = screen->r;
+-	r.max.y = r.min.y+Dy(r)/5;
++	if(Dx(r) > 8*80+FLMARGIN+FLSCROLLWID)
++		r.max.x = r.min.x + 8*80+FLMARGIN+FLSCROLLWID;
++	r.max.y = r.min.y+Dy(r)/6;
+ 	flstart(screen->clipr);
+ 	rinit(&cmd.rasp);
+ 	flnew(&cmd.l[0], gettext, 1, &cmd);

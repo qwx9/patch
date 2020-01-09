@@ -1,0 +1,117 @@
+diff -r 82ca4d784349 sys/src/cmd/fplot.c
+--- a/sys/src/cmd/fplot.c	Sun Jul 01 23:35:23 2018 -0400
++++ b/sys/src/cmd/fplot.c	Thu Jul 05 04:44:35 2018 +0200
+@@ -366,7 +366,9 @@
+ 		if(x >= picx || y >= picy || x < 0 || y < 0)
+ 			return;
+ 		p = imagedata + (picx * y + x) * 3;
+-		p[0] = p[1] = p[2] = 0;
++		p[0] = 0;
++		p[1] = 0x44;
++		p[2] = 0x88;
+ 	} else
+ 		draw(screen, Rect(x, y, x + 1, y + 1), color, nil, ZP);
+ }
+@@ -450,7 +452,7 @@
+ 		lr = rectsubpt(lr, Pt(0, lr.min.y - ny));
+ 	}
+ 	if(rectinrect(lr, screen->r) && (lr.min.x > x || lr.max.x <= x)){
+-		string(screen, lr.min, display->black, ZP, display->defaultfont, buf);
++		string(screen, lr.min, color, ZP, display->defaultfont, buf);
+ 		return 1;
+ 	}
+ 	return 0;
+@@ -472,7 +474,7 @@
+ 		lr = rectsubpt(lr, Pt(lr.min.x - nx, 0));
+ 	}
+ 	if(rectinrect(lr, screen->r) && (lr.min.y > y || lr.max.y <= y)){
+-		string(screen, lr.min, display->black, ZP, display->defaultfont, buf);
++		string(screen, lr.min, color, ZP, display->defaultfont, buf);
+ 		return 1;
+ 	}
+ 	return 0;
+@@ -539,25 +541,25 @@
+ 		x = deconvx(&screen->r, 0);
+ 	else
+ 		x = screen->r.min.x+5;
+-	line(screen, Pt(x, screen->r.min.y), Pt(x, screen->r.max.y), Endarrow, 0, 0, display->black, ZP);
++	line(screen, Pt(x, screen->r.min.y), Pt(x, screen->r.max.y), Endarrow, 0, 0, color, ZP);
+ 	if(ymin < 0 && ymax > 0)
+ 		y = deconvy(&screen->r, 0);
+ 	else
+ 		y = screen->r.max.y-5;
+-	line(screen, Pt(screen->r.min.x, y), Pt(screen->r.max.x, y), 0, Endarrow, 0, display->black, ZP);
++	line(screen, Pt(screen->r.min.x, y), Pt(screen->r.max.x, y), 0, Endarrow, 0, color, ZP);
+ 	nx = ticks(xmin, xmax, &dx, &mx);
+ 	tickfmt(dx, mx, nx, fmt);
+ 	for(i = 0; i <= nx; i++){
+ 		p = deconvx(&screen->r, dx*i+mx);
+ 		if(xticklabel(fmt, dx*i+mx, p, x, y))
+-			line(screen, Pt(p, y), Pt(p, y-5), 0, 0, 0, display->black, ZP);
++			line(screen, Pt(p, y), Pt(p, y-5), 0, 0, 0, color, ZP);
+ 	}
+ 	ny = ticks(ymin, ymax, &dy, &my);
+ 	tickfmt(dy, my, ny, fmt);
+ 	for(i = 0; i <= ny; i++){
+ 		p = deconvy(&screen->r, dy*i+my);
+ 		if(yticklabel(fmt, dy*i+my, p, x, y))
+-			line(screen, Pt(x, p), Pt(x+5, p), 0, 0, 0, display->black, ZP);
++			line(screen, Pt(x, p), Pt(x+5, p), 0, 0, 0, color, ZP);
+ 	}
+ }
+ 
+@@ -566,7 +568,6 @@
+ {
+ 	int i;
+ 	
+-	color = display->black;
+ 	for(i = 0; i < nfns; i++)
+ 		drawgraph(&fns[i], &screen->r);
+ 	if(!aflag)
+@@ -603,7 +604,7 @@
+ 	xmax = xmax_;
+ 	ymin = ymin_;
+ 	ymax = ymax_;
+-	draw(screen, screen->r, display->white, nil, ZP);
++	draw(screen, screen->r, display->black, nil, ZP);
+ 	drawgraphs();
+ }
+ 
+@@ -617,7 +618,7 @@
+ 	ymax = zoomst[nzoomst - 1].ymax;
+ 	zoomst = realloc(zoomst, sizeof(FRectangle) * --nzoomst);
+ 	if(zoomst == nil && nzoomst != 0) sysfatal("realloc: %r");
+-	draw(screen, screen->r, display->white, nil, ZP);
++	draw(screen, screen->r, display->black, nil, ZP);
+ 	drawgraphs();
+ }
+ 
+@@ -687,7 +688,6 @@
+ 	parsefns(argc, argv);
+ 	if(cflag) {
+ 		imagedata = emalloc(picx * picy * 3);
+-		memset(imagedata, 0xFF, picx * picy * 3);
+ 		print("%11s %11d %11d %11d %11d ", "r8g8b8", 0, 0, picx, picy);
+ 		r.min.x = r.min.y = 0;
+ 		r.max.x = picx;
+@@ -699,7 +699,11 @@
+ 	} else {
+ 		if(initdraw(nil, nil, "fplot") < 0)
+ 			sysfatal("initdraw: %r");
++		color = allocimage(display, Rect(0,0,1,1), RGB24, 1, 0x884400ff);
++		if(color == nil)
++			sysfatal("allocimage: %r");
+ 		einit(Emouse | Ekeyboard);
++		draw(screen, screen->r, display->black, nil, ZP);
+ 		drawgraphs();
+ 		for(;;) {
+ 			switch(event(&e)) {
+@@ -720,7 +724,7 @@
+ 						zoomst[nzoomst++] = (FRectangle){xmin, xmax, ymin, ymax};
+ 						ymin = gymin-0.05*(gymax-gymin);
+ 						ymax = gymax+0.05*(gymax-gymin);
+-						draw(screen, screen->r, display->white, nil, ZP);
++						draw(screen, screen->r, display->black, nil, ZP);
+ 						drawgraphs();
+ 					}
+ 					break;

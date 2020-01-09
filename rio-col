@@ -1,0 +1,46 @@
+rio colors.
+
+diff -r 3cb0cf9ab43a sys/src/cmd/rio/data.c
+--- a/sys/src/cmd/rio/data.c	Mon Feb 08 20:07:56 2016 -0500
++++ b/sys/src/cmd/rio/data.c	Sun Feb 14 06:53:09 2016 +0100
+@@ -175,27 +175,21 @@
+ void
+ iconinit(void)
+ {
+-	background = allocimage(display, Rect(0,0,1,1), RGB24, 1, 0x777777FF);
++	background = display->black;
+ 
+ 	/* greys are multiples of 0x11111100+0xFF, 14* being palest */
+-	cols[BACK] = allocimage(display, Rect(0,0,1,1), CMAP8, 1, 0xFFFFFFFF^reverse);
+-	cols[BORD] = allocimage(display, Rect(0,0,1,1), CMAP8, 1, 0x999999FF^reverse);
+-	cols[TEXT] = allocimage(display, Rect(0,0,1,1), CMAP8, 1, 0x000000FF^reverse);
+-	cols[HTEXT] = allocimage(display, Rect(0,0,1,1), CMAP8, 1, 0x000000FF);
+-	if(!reverse) {
+-		cols[HIGH] = allocimage(display, Rect(0,0,1,1), CMAP8, 1, 0xCCCCCCFF);
+-		titlecol = allocimage(display, Rect(0,0,1,1), CMAP8, 1, DGreygreen);
+-		lighttitlecol = allocimage(display, Rect(0,0,1,1), CMAP8, 1, DPalegreygreen);
+-	} else {
+-		cols[HIGH] = allocimage(display, Rect(0,0,1,1), CMAP8, 1, DPurpleblue);
+-		titlecol = allocimage(display, Rect(0,0,1,1), CMAP8, 1, DPurpleblue);
+-		lighttitlecol = allocimage(display, Rect(0,0,1,1), CMAP8, 1, 0x222222FF);
+-	}
+-	dholdcol = allocimage(display, Rect(0,0,1,1), CMAP8, 1, DMedblue);
+-	lightholdcol = allocimage(display, Rect(0,0,1,1), CMAP8, 1, DGreyblue);
+-	paleholdcol = allocimage(display, Rect(0,0,1,1), CMAP8, 1, DPalegreyblue);
+-	paletextcol = allocimage(display, Rect(0,0,1,1), CMAP8, 1, 0x666666FF^reverse);
+-	sizecol = allocimage(display, Rect(0,0,1,1), CMAP8, 1, DRed);
++	cols[BACK] = allocimage(display, Rect(0,0,1,1), CMAP8, 1, DBlack);
++	cols[BORD] = allocimage(display, Rect(0,0,1,1), CMAP8, 1, 0x111111FF);
++	cols[TEXT] = allocimage(display, Rect(0,0,1,1), CMAP8, 1, 0x884400FF);
++	cols[HTEXT] = allocimage(display, Rect(0,0,1,1), CMAP8, 1, 0x884400FF);
++	cols[HIGH] = allocimage(display, Rect(0,0,1,1), CMAP8, 1, 0x440000FF);
++	titlecol = allocimage(display, Rect(0,0,1,1), CMAP8, 1, 0x440000FF);
++	lighttitlecol = allocimage(display, Rect(0,0,1,1), CMAP8, 1, 0x111111FF);
++	dholdcol = allocimage(display, Rect(0,0,1,1), CMAP8, 1, 0x666666FF);
++	lightholdcol = allocimage(display, Rect(0,0,1,1), CMAP8, 1, 0x222222FF);
++	paleholdcol = allocimage(display, Rect(0,0,1,1), CMAP8, 1, 0x333333FF);
++	paletextcol = allocimage(display, Rect(0,0,1,1), CMAP8, 1, 0x550000FF);
++	sizecol = allocimage(display, Rect(0,0,1,1), CMAP8, 1, 0x550000FF);
+ 
+ 	if(reverse == 0)
+ 		holdcol = dholdcol;

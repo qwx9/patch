@@ -1,0 +1,23 @@
+diff -r 20a0f09456ec sys/src/cmd/colors.c
+--- a/sys/src/cmd/colors.c	Sun Apr 17 07:33:35 2016 +0200
++++ b/sys/src/cmd/colors.c	Mon Apr 18 06:29:26 2016 +0200
+@@ -28,7 +28,7 @@
+ 	}
+ 
+ 	ny = n/nx;
+-	draw(screen, screen->r, display->white, nil, ZP);
++	draw(screen, screen->r, display->black, nil, ZP);
+ 	r = insetrect(screen->r, 5);
+ 	r.min.y+=20;
+ 	b.max.y=r.min.y;
+@@ -155,8 +155,8 @@
+ 							rgb&0xFF,
+ 							(rgb<<8) | 0xFF);
+ 						p = addpt(screen->r.min, Pt(2,2));
+-						draw(screen, Rpt(p, addpt(p, stringsize(font, buf))), display->white, nil, p);
+-						string(screen, p, display->black, ZP, font, buf);
++						draw(screen, Rpt(p, addpt(p, stringsize(font, buf))), display->black, nil, p);
++						string(screen, p, display->white, ZP, font, buf);
+ 						prev=i;
+ 						break;
+ 					}

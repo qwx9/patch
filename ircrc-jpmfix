@@ -1,0 +1,121 @@
+from _jpm: http://www.plan9.fi/up/ircrc
+fixes hanging connections at startup
+
+diff -r 94844cc7f1fd rc/bin/ircrc
+--- a/rc/bin/ircrc	Tue Mar 01 21:27:37 2016 -0500
++++ b/rc/bin/ircrc	Sat Mar 05 23:05:00 2016 +0200
+@@ -6,7 +6,7 @@
+ port=6667
+ realname='<nil>'
+ target=''
+-netdir=()
++pipe=/n/ircrc
+ nick=$user
+ pass=()
+ tls=0
+@@ -17,8 +17,7 @@
+ }
+ 
+ fn sigint sigterm {
+-	if (! ~ $#netdir 0)
+-		echo  QUIT : Leaving... > $netdir/data
++	echo  QUIT : Leaving... > $pipe/data
+ }
+ 
+ fn mshift {
+@@ -33,29 +32,39 @@
+ fn work {
+         if(~ $#serverpass 1)
+                 echo PASS $serverpass > $netdir/data
+-	echo USER $user foo bar :$realname > $netdir/data
+-	echo NICK $nick > $netdir/data
++	echo USER $user foo bar :$realname >[1=3]
++	echo NICK $nick >[1=3]
+ 	if (~ $#pass 1)
+-		echo PRIVMSG 'nickserv :'identify $"pass > $netdir/data
++		echo PRIVMSG 'nickserv :'identify $"pass >[1=3]
+ 	if(! ~ $target ''){
+ 		title
+-		echo JOIN $target > $netdir/data
++		echo JOIN $target >[1=3]
+ 	}
+ 	if(~ $target *,*)
+ 		target = `{echo $target | awk -F',' '{print $NF}'}
+ 	while (cmd=`{read}) {
+ 		s=$status
+ 		if(~ $s *eof) {
+-			echo  QUIT : Leaving... > $netdir/data
++			echo  QUIT : Leaving... >[1=3]
+ 			exit
+ 		}
+ 		msg=()
+ 		out=()
+ 		switch ($cmd(1)) {
+ 		case /!
+-			eval `{mshift $cmd} | while(rc=`{read})echo 'PRIVMSG '^$target^' :' $rc | tee $netdir/data
++			eval `{mshift $cmd} | while(rc=`{read}) echo 'PRIVMSG '^$target^' :' $rc | tee /fd/3
+ 		case /M
+-			msg = (MODE `{mshift $cmd})
++			switch($#cmd){
++			case 1
++				if(! ~ $target '')
++					msg = (TOPIC $target)
++			case 2
++				msg = (TOPIC $cmd(2))
++			case *
++				chan = $cmd(2)
++				topic = $cmd(3-)
++				msg = (TOPIC $chan :^$"topic)
++			}
+ 		case /N
+ 			cmd = `{mshift $cmd}
+ 			if (! ~ $#cmd 0)
+@@ -101,7 +110,7 @@
+ 		case /w
+ 			msg = (WHO `{mshift $cmd})
+ 		case /x
+-			echo  QUIT : Leaving... > $netdir/data
++			echo QUIT : Leaving... >[1=3]
+ 			exit
+ 		case /*
+ 			echo unknown command
+@@ -110,7 +119,7 @@
+ 			out = '('^$target^')	⇐	'^$"cmd
+ 		}
+ 		if (! ~ $#msg 0)
+-			echo $msg > $netdir/data
++			echo $msg >[1=3]
+ 		if (! ~ $#out 0)
+ 			echo `{etime}^' '^$out
+ 	}
+@@ -174,7 +183,7 @@
+ 		case *NOTICE*
+ 			line = `{echo -n $line | notice}
+ 		case *PING*
+-			echo -n $line | sed 's/PING/PONG/' > $netdir/data
++			echo -n $line | sed 's/PING/PONG/' >[1=3]
+ 			line = ()
+ 		case *
+ 			line = `{echo -n $line | numeric}
+@@ -238,16 +247,13 @@
+ 	pass=$userpass(2)
+ }
+ 
+-p='/n/ircrc'
+-bind '#|' $p
++bind '#|' $pipe
+ echo connecting to tcp!$server!$port...
+ if(~ $tls 0){
+-	aux/trampoline tcp!$server!$port <>$p/data1 >[1=0] &
++	aux/trampoline tcp!$server!$port <>$pipe/data1 >[1=0] &
+ }
+ if not {
+-	tlsclient tcp!$server!$port <>$p/data1 >[1=0] &
++	tlsclient tcp!$server!$port <>$pipe/data1 >[1=0] &
+ }
+-netdir=$p
+-cat $netdir/data | tr -d '\x2\x8\xd\x1f' | pretty &
+-work
+-
++<$pipe/data tr -d '\x2\x8\xd\x1f' | pretty >[3]$pipe/data &
++work >[3]$pipe/data

@@ -1,0 +1,173 @@
+this lifts a bunch of limits in the engine for stupid bullshit wads that
+don't honor them. this should not be merged, ever. these inflate a bunch
+of arrays, and make doom use much more memory.
+. savegame buffer overflow: for maps that are too large; does not work
+  correctly, loading several times in game will eventually crash (will not
+  corrupt anything though)
+
+diff -Naur a/sys/src/games/doom/g_game.c b/sys/src/games/doom/g_game.c
+--- a/sys/src/games/doom/g_game.c	Wed Jul 29 13:45:35 2015
++++ b/sys/src/games/doom/g_game.c	Tue Aug 11 15:47:02 2015
+@@ -68,7 +68,7 @@
+ #include "g_game.h"
+ 
+ 
+-#define SAVEGAMESIZE	0x2c000
++#define SAVEGAMESIZE	0x200000
+ #define SAVESTRINGSIZE	24
+ 
+ 
+@@ -137,6 +137,7 @@
+ short		consistancy[MAXPLAYERS][BACKUPTICS]; 
+  
+ byte*		savebuffer;
++void *savbuf;	/* FIXME */
+  
+  
+ // 
+@@ -1261,7 +1262,10 @@
+     sprintf (name,SAVEGAMENAME"%d.dsg",savegameslot); 
+     description = savedescription; 
+ 	 
+-    save_p = savebuffer = screens[1]+0x4000; 
++//    if(save_p == nil || save_p == savebuffer + SAVESTRINGSIZE)
++	if(savbuf == nil)
++		savbuf = Z_Malloc(SAVEGAMESIZE, PU_STATIC, 0);
++	save_p = savebuffer = savbuf;
+ 	 
+     memcpy (save_p, description, SAVESTRINGSIZE); 
+     save_p += SAVESTRINGSIZE; 
+@@ -1296,7 +1300,7 @@
+     players[consoleplayer].message = GGSAVED; 
+ 
+     // draw the pattern into the back screen
+-    R_FillBackScreen ();	
++    R_FillBackScreen ();
+ } 
+  
+ 
+diff -Naur a/sys/src/games/doom/i_system.c b/sys/src/games/doom/i_system.c
+--- a/sys/src/games/doom/i_system.c	Wed Jul 29 18:58:52 2015
++++ b/sys/src/games/doom/i_system.c	Tue Aug 11 15:22:39 2015
+@@ -11,7 +11,7 @@
+ #include "g_game.h"
+ #include "m_misc.h"
+ 
+-int mb_used = 6;	/* 6MB heap */
++int mb_used = 12;	/* 12MB heap */
+ 
+ void I_Init (void)
+ {
+diff -Naur a/sys/src/games/doom/p_enemy.c b/sys/src/games/doom/p_enemy.c
+--- a/sys/src/games/doom/p_enemy.c	Mon Jul 27 20:08:20 2015
++++ b/sys/src/games/doom/p_enemy.c	Tue Aug 11 15:21:28 2015
+@@ -262,7 +262,7 @@
+ fixed_t	xspeed[8] = {FRACUNIT,47000,0,-47000,-FRACUNIT,-47000,0,47000};
+ fixed_t yspeed[8] = {0,47000,FRACUNIT,47000,0,-47000,-FRACUNIT,-47000};
+ 
+-#define MAXSPECIALCROSS	8
++#define MAXSPECIALCROSS	128
+ 
+ extern	line_t*	spechit[MAXSPECIALCROSS];
+ extern	int	numspechit;
+diff -Naur a/sys/src/games/doom/p_local.h b/sys/src/games/doom/p_local.h
+--- a/sys/src/games/doom/p_local.h	Sun Aug  2 19:57:59 2015
++++ b/sys/src/games/doom/p_local.h	Tue Aug 11 15:21:28 2015
+@@ -153,7 +153,7 @@
+     }			d;
+ } intercept_t;
+ 
+-#define MAXINTERCEPTS	128
++#define MAXINTERCEPTS	512
+ 
+ extern intercept_t	intercepts[MAXINTERCEPTS];
+ extern intercept_t*	intercept_p;
+diff -Naur a/sys/src/games/doom/p_map.c b/sys/src/games/doom/p_map.c
+--- a/sys/src/games/doom/p_map.c	Mon Jul 27 20:08:20 2015
++++ b/sys/src/games/doom/p_map.c	Tue Aug 11 15:21:28 2015
+@@ -62,7 +62,7 @@
+ 
+ // keep track of special lines as they are hit,
+ // but don't process them until the move is proven valid
+-#define MAXSPECIALCROSS		8
++#define MAXSPECIALCROSS		128
+ 
+ line_t*		spechit[MAXSPECIALCROSS];
+ int		numspechit;
+diff -Naur a/sys/src/games/doom/p_spec.c b/sys/src/games/doom/p_spec.c
+--- a/sys/src/games/doom/p_spec.c	Mon Jul 27 20:08:20 2015
++++ b/sys/src/games/doom/p_spec.c	Tue Aug 11 15:21:28 2015
+@@ -78,7 +78,7 @@
+ 
+ 
+ 
+-#define MAXANIMS                32
++#define MAXANIMS                256
+ 
+ extern anim_t	anims[MAXANIMS];
+ extern anim_t*	lastanim;
+@@ -321,7 +321,7 @@
+ // Note: this should be doable w/o a fixed array.
+ 
+ // 20 adjoining sectors max!
+-#define MAX_ADJOINING_SECTORS    	20
++#define MAX_ADJOINING_SECTORS    	128
+ 
+ fixed_t
+ P_FindNextHighestFloor
+diff -Naur a/sys/src/games/doom/r_bsp.c b/sys/src/games/doom/r_bsp.c
+--- a/sys/src/games/doom/r_bsp.c	Mon Jul 27 20:08:20 2015
++++ b/sys/src/games/doom/r_bsp.c	Tue Aug 11 15:21:28 2015
+@@ -85,7 +85,7 @@
+ } cliprange_t;
+ 
+ 
+-#define MAXSEGS		32
++#define MAXSEGS		SCREENWIDTH/2+1
+ 
+ // newend is one past the last valid seg
+ cliprange_t*	newend;
+diff -Naur a/sys/src/games/doom/r_defs.h b/sys/src/games/doom/r_defs.h
+--- a/sys/src/games/doom/r_defs.h	Mon Jul 27 20:08:20 2015
++++ b/sys/src/games/doom/r_defs.h	Tue Aug 11 15:21:28 2015
+@@ -52,7 +52,7 @@
+ #define SIL_TOP			2
+ #define SIL_BOTH		3
+ 
+-#define MAXDRAWSEGS		256
++#define MAXDRAWSEGS		1024
+ 
+ 
+ 
+diff -Naur a/sys/src/games/doom/r_plane.c b/sys/src/games/doom/r_plane.c
+--- a/sys/src/games/doom/r_plane.c	Mon Jul 27 20:08:20 2015
++++ b/sys/src/games/doom/r_plane.c	Tue Aug 11 15:21:28 2015
+@@ -47,14 +47,14 @@
+ //
+ 
+ // Here comes the obnoxious "visplane".
+-#define MAXVISPLANES	128
++#define MAXVISPLANES	1024
+ visplane_t		visplanes[MAXVISPLANES];
+ visplane_t*		lastvisplane;
+ visplane_t*		floorplane;
+ visplane_t*		ceilingplane;
+ 
+ // ?
+-#define MAXOPENINGS	SCREENWIDTH*64
++#define MAXOPENINGS	SCREENWIDTH*200
+ short			openings[MAXOPENINGS];
+ short*			lastopening;
+ 
+diff -Naur a/sys/src/games/doom/r_things.h b/sys/src/games/doom/r_things.h
+--- a/sys/src/games/doom/r_things.h	Mon Jul 27 20:08:20 2015
++++ b/sys/src/games/doom/r_things.h	Tue Aug 11 15:21:28 2015
+@@ -24,7 +24,7 @@
+ #define __R_THINGS__
+ 
+ 
+-#define MAXVISSPRITES  	128
++#define MAXVISSPRITES  	1024
+ 
+ extern vissprite_t	vissprites[MAXVISSPRITES];
+ extern vissprite_t*	vissprite_p;

@@ -1,0 +1,35 @@
+diff -r eb26bc92b777 sys/src/cmd/paint.c
+--- a/sys/src/cmd/paint.c	Sun Jan 13 17:17:11 2019 +0100
++++ b/sys/src/cmd/paint.c	Sun Jan 20 07:54:13 2019 +0100
+@@ -523,9 +523,12 @@
+ 		return 1;
+ 	}
+ 	if(ptinrect(m.xy, palr)){
++		int i, n;
++		char buf[32];
+ 		Image *col;
+ 
+-		col = pal[(m.xy.x - palr.min.x) * nelem(pal) / Dx(palr)];
++		i = (m.xy.x - palr.min.x) * nelem(pal) / Dx(palr);
++		col = pal[i];
+ 		switch(m.buttons & 7){
+ 		case 1:
+ 			ink = col;
+@@ -536,6 +539,17 @@
+ 			drawpal();
+ 			update(nil);
+ 			break;
++		case 4:
++			buf[0] = 0;
++			if(eenter("Color", buf, sizeof(buf), &m) <= 0)
++				break;
++			n = strtol(buf, nil, 0);
++			freeimage(pal[i]);
++			pal[i] = allocimage(display, Rect(0, 0, 1, 1), RGB24, 1, n << 8 | 0xFF);
++			if(pal[i] == nil)
++				sysfatal("allocimage: %r");
++			drawpal();
++			break;
+ 		}
+ 		return 1;
+ 	}

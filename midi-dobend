@@ -1,0 +1,217 @@
+midi: implement pitch wheel
+
+this is an aborted attempt to implement pitch bending (event 0xe0).
+
+this maintains a list of active notes, storing note number, amplitude and bent
+frequency; this greatly reduces cpu time spent in run(), also alleviating the
+issue of delays between writes to /dev/audio being too great...
+
+it blows chunks:
+- greatly complexifies midi note handling
+- pitch steps are discrete and too noticeable, actually worsening playback
+  (blatant example: doom e2m2), but don't yet know where T % f >= f/2 is coming
+  from or how to fix this
+
+→ i don't yet know what i'm doing nor how to solve this correctly
+
+diff -r 9c4b9c67ff16 sys/src/games/midi.c
+--- a/sys/src/games/midi.c	Thu Feb 16 20:11:20 2017 +0100
++++ b/sys/src/games/midi.c	Wed Feb 22 01:34:39 2017 +0200
+@@ -3,19 +3,29 @@
+ 
+ enum { SAMPLE = 44100 };
+ 
++typedef struct Note Note;
++typedef struct Tracker Tracker;
++
++struct Note {
++	int nt;
++	Tracker *src;
++	int ch;
++	uchar a;
++	int f;
++	int ½f;
++	Note *n;
++} nl[256], np;
++
+ struct Tracker {
+ 	uchar *data;
+ 	char ended;
+ 	uvlong t;
+-	uchar notes[16][128];
++	double bend[16];
+ 	int cmd;
+ } *tr;
+ 
+-typedef struct Tracker Tracker;
+-
+ int fd, ofd, div, tempo = 500000, ntrack;
+ uvlong T;
+-int freq[128];
+ 
+ void *
+ emallocz(int size)
+@@ -108,32 +118,23 @@
+ }
+ 
+ void
+-run(uvlong n)
++run(uvlong dt)
+ {
+-	int samp, j, k, l, no[128];
++	int samp, l;
+ 	uchar *s;
+-	int t, f;
++	int t;
+ 	short u;
+-	Tracker *x;
+-	
+-	samp = n - T;
++	Note *n;
++
++	samp = dt - T;
+ 	if(samp <= 0)
+ 		return;
+-	memset(no, 0, sizeof no);
+-	for(x = tr; x < tr + ntrack; x++){
+-		if(x->ended)
+-			continue;
+-		for(j = 0; j < 16; j++)
+-			for(k = 0; k < 128; k++)
+-				no[k] += x->notes[j][k];
+-	}
+ 	s = emallocz(samp * 4);
+ 	for(l = 0; l < samp; l++){
+ 		t = 0;
+-		for(k = 0; k < 128; k++){
+-			f = (T % freq[k]) >= freq[k]/2 ? 1 : 0;
+-			t += f * no[k];
+-		}
++		for(n = np.n; n != &np; n = n->n)
++			if(T % n->f >= n->½f)
++				t += n->a;
+ 		u = t*10;
+ 		s[4 * l] = s[4 * l + 2] = u;
+ 		s[4 * l + 1] = s[4 * l + 3] = u >> 8;
+@@ -144,11 +145,70 @@
+ }
+ 
+ void
++bend(Tracker *src, int ch, int b)
++{
++	int f;
++	double d;
++	Note *n;
++
++	d = (b - 8192) / 4095.5;
++	d = pow(2, d / 12);
++	src->bend[ch] = d;
++	for(n = np.n; n != &np; n = n->n){
++		if(n->src != src || n->ch != ch)
++			continue;
++		f = SAMPLE / (440 * d * pow(1.05946, n->nt - 69));
++		n->f = f;
++		n->½f = f / 2;
++	}
++}
++
++void
++pop(Tracker *src, int ch, int nt)
++{
++	Note *n, *p;
++
++	for(p = &np, n = np.n; n != &np; p = n, n = n->n)
++		if(n->src == src && n->ch == ch && n->nt == nt){
++			p->n = n->n;
++			memset(n, 0, sizeof *n);
++			return;
++		}
++}
++
++void
++push(Tracker *src, int ch, int nt, int a)
++{
++	int f;
++	Note *n, *p;
++
++	for(p = &np, n = np.n; n != &np; p = n, n = n->n)
++		if(n->src == src && n->ch == ch && n->nt == nt){
++			n->a = a;
++			return;
++		}
++	for(n = nl; n < nl + nelem(nl); n++)
++		if(n->src == nil)
++			break;
++	if(n == nl + nelem(nl))
++		return;
++	n->src = src;
++	n->ch = ch;
++	n->nt = nt;
++	n->a = a;
++	f = SAMPLE / (440 * src->bend[ch] * pow(1.05946, nt - 69));
++	n->f = f;
++	n->½f = f / 2;
++	p->n = n;
++	n->n = &np;
++}
++
++void
+ readevent(Tracker *src)
+ {
+ 	uvlong l;
+ 	int n,t;
+-	
++
+ 	l = tconv(getvar(src));
+ 	run(src->t += l);
+ 	t = get8(src);
+@@ -161,13 +221,12 @@
+ 		src->cmd = t;
+ 	switch(t >> 4){
+ 	case 0x8:
+-		n = get8(src);
++		pop(src, t & 15, get8(src));
+ 		get8(src);
+-		src->notes[t & 15][n] = 0;
+ 		break;
+ 	case 0x9:
+ 		n = get8(src);
+-		src->notes[t & 15][n] = get8(src);
++		push(src, t & 15, n, get8(src));
+ 		break;
+ 	case 0xB:
+ 		get16(src);
+@@ -175,6 +234,11 @@
+ 	case 0xC:
+ 		get8(src);
+ 		break;
++	case 0xE:
++		n = get8(src) & 0x7f;
++		n = get8(src) << 7 & 0x3f80 | n;
++		bend(src, t & 15, n);
++		break;
+ 	case 0xF:
+ 		t = get8(src);
+ 		n = get8(src);
+@@ -204,7 +268,7 @@
+ void
+ main(int argc, char **argv)
+ {
+-	int i, size;
++	int i, j, size;
+ 	uvlong t, mint;
+ 	Tracker *x, *minx;
+ 
+@@ -228,9 +292,10 @@
+ 		size = get32(nil);
+ 		tr[i].data = emallocz(size);
+ 		read(fd, tr[i].data, size);
++		for(j = 0; j < 16; j++)
++			tr[i].bend[j] = 1.0;
+ 	}
+-	for(i = 0; i < 128; i++)
+-		freq[i] = SAMPLE / (440 * pow(1.05946, i - 69));
++	np.n = &np;
+ 	for(;;){
+ 		minx = nil;
+ 		mint = 0;

@@ -1,0 +1,73 @@
+this shit sucks. that code doesn't belong there. something in pipeline would be
+better. pico?
+
+diff -r 3cb0cf9ab43a sys/src/cmd/page.c
+--- a/sys/src/cmd/page.c	Mon Feb 08 20:07:56 2016 -0500
++++ b/sys/src/cmd/page.c	Thu Feb 11 16:16:28 2016 +0100
+@@ -33,6 +33,7 @@
+ int imode;
+ int newwin;
+ int rotate;
++int invert;
+ int viewgen;
+ int forward;	/* read ahead direction: >= 0 forwards, < 0 backwards */
+ Point resize, pos;
+@@ -67,6 +68,7 @@
+ 	Cfitheight,
+ 	Crotate90,
+ 	Cupsidedown,
++	Cinv,
+ 	Cdummy1,
+ 	Cnext,
+ 	Cprev,
+@@ -91,6 +93,7 @@
+ 	[Cfitheight]	"fit height",	'h', 0, 0,
+ 	[Crotate90]	"rotate 90",	'r', 0, 0,
+ 	[Cupsidedown]	"upside down",	'u', 0, 0,
++	[Cinv]		"invert",	'i', 0, 0,
+ 	[Cdummy1]	"",		0, 0, 0,
+ 	[Cnext]		"next",		Kright, ' ', '\n', 
+ 	[Cprev]		"prev",		Kleft, Kbs, 0,
+@@ -894,6 +897,23 @@
+ }
+ 
+ void
++inv(Image *i)
++{
++	int n;
++	uchar *buf, *p;
++
++	n = imagesize(i);
++	buf = malloc(n);
++	if(buf == 0)
++		return;
++	unloadimage(i, i->r, buf, n);
++	for(p=buf; p<buf+n; p++)
++		*p = ~*p;
++	loadimage(i, i->r, buf, n);
++	free(buf);
++}
++
++void
+ loadpage(Page *p)
+ {
+ 	int fd;
+@@ -912,6 +932,8 @@
+ 		if(p->image == nil)
+ 			p->open = nil;
+ 		else {
++			if(invert)
++				inv(p->image);
+ 			lockdisplay(display);
+ 			imemsize += imagesize(p->image);
+ 			unlockdisplay(display);
+@@ -1494,6 +1516,9 @@
+ 		resize = subpt(screen->r.max, screen->r.min);
+ 		resize.x = 0;
+ 		goto Unload;
++	case Cinv:
++		invert = !invert;
++		goto Unload;
+ 	case Czoomin:
+ 	case Czoomout:
+ 		if(current == nil || !canqlock(current))

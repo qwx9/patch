@@ -1,0 +1,43 @@
+diff -r a1433cb28946 rc/bin/play
+--- a/rc/bin/play	Sun Jul 15 06:31:45 2018 +0200
++++ b/rc/bin/play	Sun Jul 15 17:58:38 2018 +0200
+@@ -23,6 +23,13 @@
+ 	cleanup
+ }
+ 
++fn midi {
++	if(test -f /mnt/wad/genmidi)
++		games/dmid | games/opl3
++	if not
++		games/midi -c
++}
++
+ fn play1 {
+ 	if(! ~ $#* 2){
+ 		tmp=(/tmp/play.$pid.$#tmp.tmp $tmp)
+@@ -57,9 +64,11 @@
+ 		case *audio/basic*
+ 			audio/sundec
+ 		case *audio/midi*
+-			games/midi -c
++			midi
+ 		case *audio/mus*
+-			games/mus | games/midi -c
++			games/mus | midi
++		case *audio/mod*
++			mod/decode
+ 		case *pls*
+ 			awk 'BEGIN {FS="="} /^File/{print $2}' | play1 list plain
+ 		case *
+@@ -75,9 +84,9 @@
+ 			case *.au *.AU
+ 				audio/sundec
+ 			case *.mid *.MID
+-				games/midi -c
++				midi
+ 			case *.mus *.MUS
+-				games/mus | games/midi -c
++				games/mus | midi
+ 			case *
+ 				echo $argv0: $1: unknown format: $2 >[1=2]
+ 			}

@@ -1,0 +1,19 @@
+I_WaitVBL is used as a delay twice: once in the netcode on disconnect, to
+wait a little before sending notice to the next node, and once on exit, to
+allow playing one last sound effect.
+requires doom-sndmus.patch (since sound is handled on a different proc).
+
+diff -Naur a/sys/src/games/doom/i_video.c b/sys/src/games/doom/i_video.c
+--- a/sys/src/games/doom/i_video.c	Wed Jul 29 13:45:35 2015
++++ b/sys/src/games/doom/i_video.c	Tue Aug 11 14:25:16 2015
+@@ -185,8 +185,9 @@
+ {
+ }
+ 
+-void I_WaitVBL(int)
++void I_WaitVBL(int s)
+ {
++	sleep(s * (1000/70));
+ }
+ 
+ 

@@ -1,0 +1,12 @@
+diff -r 2c3766a9188f rc/bin/9fs
+--- a/rc/bin/9fs	Sun May 21 17:27:30 2017 +0200
++++ b/rc/bin/9fs	Mon May 22 08:03:42 2017 +0200
+@@ -70,6 +70,8 @@
+ 	vacfs -m /n/`{basename $1 .vac} `{cat $score}
+ case wiki
+ 	srv -m 'net!plan9.bell-labs.com!wiki' wiki /mnt/wiki
++case 9paste
++	srv -n fs.9paste.net 9paste /n/9paste
+ case *
+ 	switch($#*){
+ 	case 1

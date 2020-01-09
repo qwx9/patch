@@ -1,0 +1,14 @@
+diff -r 18ea8aad3bb6 sys/src/cmd/paint.c
+--- a/sys/src/cmd/paint.c	Mon Feb 25 04:36:37 2019 +0100
++++ b/sys/src/cmd/paint.c	Tue Feb 26 18:27:09 2019 +0100
+@@ -625,8 +639,8 @@
+ 		if(pal[i] == nil)
+ 			sysfatal("allocimage: %r");
+ 	}
+-	ink = pal[0];
+-	back = pal[1];
++	ink = pal[1];
++	back = pal[0];
+ 	drawpal();
+ 	center();
+ 

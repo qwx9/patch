@@ -1,0 +1,12 @@
+diff -r 12bbf1a60d48 sys/src/cmd/samterm/samterm.h
+--- a/sys/src/cmd/samterm/samterm.h	Thu Jun 01 07:07:55 2017 +0000
++++ b/sys/src/cmd/samterm/samterm.h	Mon Jun 05 15:36:48 2017 +0200
+@@ -3,7 +3,7 @@
+ #define	RUNESIZE	sizeof(Rune)
+ #define	MAXFILES	256
+ #define	READBUFSIZE 8192
+-#define	NL	5
++#define	NL	10
+ 
+ enum{
+ 	Up,

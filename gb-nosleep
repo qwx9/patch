@@ -1,0 +1,56 @@
+diff -r e899bb299ed2 sys/src/games/gb/apu.c
+--- a/sys/src/games/gb/apu.c	Fri Feb 10 22:39:47 2017 +0100
++++ b/sys/src/games/gb/apu.c	Sat Feb 11 20:06:13 2017 +0200
+@@ -475,7 +475,7 @@
+ 	if(sbufp == sbuf)
+ 		return 0;
+ 	cl = clock;
+-	rc = write(fd, sbuf, (sbufp - sbuf) * 2);
++	rc = nosleep ? 1 : write(fd, sbuf, (sbufp - sbuf) * 2);
+ 	if(rc > 0)
+ 		sbufp -= (rc+1)/2;
+ 	if(sbufp < sbuf)
+diff -r e899bb299ed2 sys/src/games/gb/dat.h
+--- a/sys/src/games/gb/dat.h	Fri Feb 10 22:39:47 2017 +0100
++++ b/sys/src/games/gb/dat.h	Sat Feb 11 20:06:13 2017 +0200
+@@ -25,6 +25,7 @@
+ extern u8int mode;
+ extern u8int mbc, feat;
+ extern int keys, scale;
++extern int nosleep;
+ 
+ enum {
+ 	JOYP = 0x00,
+diff -r e899bb299ed2 sys/src/games/gb/gb.c
+--- a/sys/src/games/gb/gb.c	Fri Feb 10 22:39:47 2017 +0100
++++ b/sys/src/games/gb/gb.c	Sat Feb 11 20:06:13 2017 +0200
+@@ -12,7 +12,7 @@
+ Rectangle picr;
+ Image *bg, *tmp;
+ Mousectl *mc;
+-int keys, paused, framestep, backup;
++int keys, paused, framestep, backup, nosleep;
+ QLock pauselock;
+ int savefd = -1, saveframes;
+ ulong clock;
+@@ -285,6 +285,9 @@
+ 				}
+ 				framestep = !framestep;
+ 				break;
++			case ' ':
++				nosleep = !nosleep;
++				break;
+ 			}
+ 		}
+ 		k &= ~(k << 1 & 0x0a | k >> 1 & 0x05);
+@@ -352,7 +355,9 @@
+ 	flushimage(display, 1);
+ 	if(profile)
+ 		timing();
+-	if(audioout() < 0){
++	if(nosleep)
++		old = nsec();
++	if(audioout() < 0 && !nosleep){
+ 		new = nsec();
+ 		diff = 0;
+ 		if(old != 0){

@@ -1,0 +1,39 @@
+document nusb/joy
+
+diff -r e540b0bb61c8 sys/man/4/nusb
+--- a/sys/man/4/nusb	Sat Oct 03 12:19:31 2015 +0200
++++ b/sys/man/4/nusb	Sun Oct 04 16:10:51 2015 +0200
+@@ -35,6 +35,12 @@
+ ]
+ .I devid
+ .PP
++.B nusb/joy
++[
++.B -d
++]
++.I devid
++.PP
+ .B nusb/serial
+ [
+ .B -d
+@@ -135,6 +141,10 @@
+ Mouse events are sent to
+ .BR /dev/mousein
+ in the same way.
++.SS Joysticks
++.I Joy
++parses data packets from a given endpoint and prints back
++any changes in the device's axes or buttons.
+ .SS Disks
+ .I Disk
+ configures and manages USB mass storage devices. It
+@@ -245,6 +255,9 @@
+ .IR shr (3),
+ .IR nusbrc (8),
+ .IR kbdfs (8)
++.SH HISTORY
++.I Joy
++first appeared in 9front (March, 2014).
+ .SH BUGS
+ The various device drivers are generic USB drivers and
+ may work only for certain devices of each class.

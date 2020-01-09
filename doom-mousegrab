@@ -1,0 +1,32 @@
+doom: re-center mouse more often to limit it escaping
+
+when a mouse motion reaches grabout's limits without crossing them, a following
+event in which the mouse passes the remaining distance between grabout and the
+window's limits will have the mouse jump out of the window.
+this happens too frequently on terminals with a good drawing speed.
+
+to reduce this, make grabout smaller, so that the distance to cross in one
+event is larger. Dx(screen->r)/4 is sufficient for the terminals i have tested
+this on.
+
+diff -r 0a3cf47fce65 sys/src/games/doom/i_video.c
+--- a/sys/src/games/doom/i_video.c	Mon Jun 27 00:36:54 2016 +0200
++++ b/sys/src/games/doom/i_video.c	Thu Jun 30 17:51:32 2016 +0300
+@@ -44,7 +44,7 @@
+ 	draw(screen, screen->r, display->black, nil, ZP);
+ 
+ 	center = addpt(screen->r.min, Pt(Dx(screen->r)/2, Dy(screen->r)/2));
+-	grabout = insetrect(screen->r, Dx(screen->r)/8);
++	grabout = insetrect(screen->r, Dx(screen->r)/4);
+ 
+ 	if((pid = rfork(RFPROC|RFMEM)) == 0){
+ 		kbdproc();
+@@ -102,7 +102,7 @@
+ 		draw(screen, screen->r, display->black, nil, ZP);
+ 
+ 		center = addpt(screen->r.min, Pt(Dx(screen->r)/2, Dy(screen->r)/2));
+-		grabout = insetrect(screen->r, Dx(screen->r)/8);
++		grabout = insetrect(screen->r, Dx(screen->r)/4);
+ 	}
+ 
+ 	scale = Dx(screen->r)/SCREENWIDTH;

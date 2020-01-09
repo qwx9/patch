@@ -1,0 +1,16 @@
+rio: always enable kill menu option
+
+diff -r 49bd5e4c9bde sys/src/cmd/rio/rio.c
+--- a/sys/src/cmd/rio/rio.c	Wed Feb 07 18:53:08 2018 +0000
++++ b/sys/src/cmd/rio/rio.c	Thu Feb 15 23:00:00 2018 +0100
+@@ -125,10 +125,6 @@
+ 	Image *i;
+ 	Rectangle r;
+ 
+-	if(strstr(argv[0], ".out") == nil){
+-		menu3str[Exit] = nil;
+-		Hidden--;
+-	}
+ 	initstr = nil;
+ 	kbdin = nil;
+ 	maxtab = 0;

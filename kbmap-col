@@ -1,0 +1,58 @@
+diff -r 49bd5e4c9bde sys/src/cmd/kbmap.c
+--- a/sys/src/cmd/kbmap.c	Wed Feb 07 18:53:08 2018 +0000
++++ b/sys/src/cmd/kbmap.c	Wed Feb 14 15:12:34 2018 +0100
+@@ -14,8 +14,7 @@
+ 
+ KbMap *map;
+ int nmap;
+-Image *lightblue;
+-Image *justblue;
++Image *txt, *sel;
+ 
+ enum {
+ 	PAD = 3,
+@@ -86,14 +85,14 @@
+ drawmap(int i)
+ {
+ 	if(map[i].current)
+-		draw(screen, map[i].r, justblue, nil, ZP);
++		draw(screen, map[i].r, sel, nil, ZP);
+ 	else
+-		draw(screen, map[i].r, lightblue, nil, ZP);
++		draw(screen, map[i].r, display->black, nil, ZP);
+ 
+-	_string(screen, addpt(map[i].r.min, Pt(2,0)), display->black, ZP,
++	_string(screen, addpt(map[i].r.min, Pt(2,0)), txt, ZP,
+ 		font, map[i].name, nil, strlen(map[i].name), 
+ 		map[i].r, nil, ZP, SoverD);
+-	border(screen, map[i].r, 1, display->black, ZP);	
++	border(screen, map[i].r, 1, txt, ZP);	
+ }
+ 
+ void
+@@ -116,7 +115,7 @@
+ {
+ 	int i;
+ 
+-	draw(screen, screen->r, lightblue, nil, ZP);
++	draw(screen, screen->r, display->black, nil, ZP);
+ 	for(i=0; i<nmap; i++)
+ 		drawmap(i);
+ 	flushimage(display, 1);
+@@ -233,12 +232,10 @@
+ 		fprint(2, "kbmap: initdraw failed: %r\n");
+ 		exits("initdraw");
+ 	}
+-	lightblue = allocimagemix(display, DPalebluegreen, DWhite);
+-	if(lightblue == nil)
+-		sysfatal("allocimagemix: %r");
+-	justblue = allocimagemix(display, DBlue, DWhite);
+-	if(justblue == nil)
+-		sysfatal("allocimagemix: %r");
++	txt = allocimage(display, Rect(0,0,1,1), screen->chan, 1, 0x884400FF);
++	sel = allocimage(display, Rect(0,0,1,1), screen->chan, 1, 0x440000FF);
++	if(txt == nil || sel == nil)
++		sysfatal("allocimage: %r");
+ 
+ 	eresized(0);
+ 	einit(Emouse|Ekeyboard);

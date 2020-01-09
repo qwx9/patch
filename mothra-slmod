@@ -1,0 +1,341 @@
+modified diff of http://9front.org/extra/mothra.black.tgz
+
+diff -r 3f9227bd4f1d sys/src/cmd/mothra/libpanel/draw.c
+--- a/sys/src/cmd/mothra/libpanel/draw.c	Mon Feb 01 22:49:20 2016 +0100
++++ b/sys/src/cmd/mothra/libpanel/draw.c	Tue Feb 02 14:03:58 2016 +0100
+@@ -15,14 +15,16 @@
+ #define	CKBORDER 2	/* space around X inside frame */
+ static int plldepth;
+ static Image *pl_white, *pl_light, *pl_dark, *pl_black, *pl_hilit;
++Image *txtcol;
+ int pl_drawinit(int ldepth){
+ 	plldepth=ldepth;
+-	pl_white=allocimage(display, Rect(0,0,1,1), screen->chan, 1, 0xFFFFFFFF);
+-	pl_light=allocimagemix(display, DPalebluegreen, DWhite);
+-	pl_dark =allocimage(display, Rect(0,0,1,1), screen->chan, 1, DPurpleblue);
+-	pl_black=allocimage(display, Rect(0,0,1,1), screen->chan, 1, 0x000000FF);
++	pl_white=display->black;
++	pl_light=display->black;
++	pl_dark=allocimage(display, Rect(0,0,1,1), CMAP8, 1, 0x222222FF);
++	pl_black=allocimage(display, Rect(0,0,1,1), CMAP8, 1, 0x770000FF);
+ 	pl_hilit=allocimage(display, Rect(0,0,1,1), CHAN1(CAlpha,8), 1, 0x80);
+-	if(pl_white==0 || pl_light==0 || pl_black==0 || pl_dark==0) return 0;
++	txtcol=allocimage(display, Rect(0,0,1,1), CMAP8, 1, 0x884400FF);
++	if(pl_white==0 || pl_light==0 || pl_black==0 || pl_dark==0 || txtcol==0) return 0;
+ 	return 1;
+ }
+ void pl_relief(Image *b, Image *ul, Image *lr, Rectangle r, int wid){
+@@ -38,6 +40,13 @@
+ }
+ Rectangle pl_boxoutline(Image *b, Rectangle r, int style, int fill){
+ 	if(plldepth==0) switch(style){
++	case SUP:
++	case TUP:
++		pl_relief(b, pl_white, pl_white, r, BWID);
++		r=insetrect(r, BWID);
++		if(fill) draw(b, r, pl_white, 0, ZP);
++		else border(b, r, SPACE, pl_white, ZP);
++		break;
+ 	case UP:
+ 		pl_relief(b, pl_black, pl_black, r, BWID);
+ 		r=insetrect(r, BWID);
+@@ -68,6 +77,13 @@
+ 		break;
+ 	}
+ 	else switch(style){
++	case SUP:
++	case TUP:
++		pl_relief(b, pl_white, pl_white, r, BWID);
++		r=insetrect(r, BWID);
++		if(fill) draw(b, r, pl_light, 0, ZP);
++		else border(b, r, SPACE, pl_white, ZP);
++		break;
+ 	case UP:
+ 		pl_relief(b, pl_white, pl_black, r, BWID);
+ 		r=insetrect(r, BWID);
+@@ -97,7 +113,10 @@
+ 		else border(b, r, SPACE, pl_white, ZP);
+ 		break;
+ 	}
+-	return insetrect(r, SPACE);
++	switch(style){
++	case SUP: return insetrect(r, SPACE-SPACE);
++	default: return insetrect(r, SPACE);
++	}
+ }
+ Rectangle pl_outline(Image *b, Rectangle r, int style){
+ 	return pl_boxoutline(b, r, style, 0);
+@@ -270,7 +289,7 @@
+ 	draw(b, r, pl_dark, pl_hilit, ZP);
+ }
+ void pl_clr(Image *b, Rectangle r){
+-	draw(b, r, display->white, 0, ZP);
++	draw(b, r, display->black, 0, ZP);
+ }
+ void pl_fill(Image *b, Rectangle r){
+ 	draw(b, r, plldepth==0? pl_white : pl_light, 0, ZP);
+diff -r 3f9227bd4f1d sys/src/cmd/mothra/libpanel/message.c
+--- a/sys/src/cmd/mothra/libpanel/message.c	Mon Feb 01 22:49:20 2016 +0100
++++ b/sys/src/cmd/mothra/libpanel/message.c	Tue Feb 02 14:03:58 2016 +0100
+@@ -29,7 +29,7 @@
+ 			end=s;
+ 		c=*end;
+ 		*end='\0';
+-		string(b, where, display->black, ZP, f, start);
++		string(b, where, txtcol, ZP, f, start);
+ 		*end=c;
+ 		where.y+=font->height;
+ 		s=end;
+diff -r 3f9227bd4f1d sys/src/cmd/mothra/libpanel/panel.h
+--- a/sys/src/cmd/mothra/libpanel/panel.h	Mon Feb 01 22:49:20 2016 +0100
++++ b/sys/src/cmd/mothra/libpanel/panel.h	Tue Feb 02 14:03:58 2016 +0100
+@@ -108,6 +108,7 @@
+ #define PL_STR		4
+ 
+ Panel *plkbfocus;			/* the panel in keyboard focus */
++extern Image *txtcol;
+ 
+ int plinit(int);			/* initialization */
+ void plpack(Panel *, Rectangle);	/* figure out where to put the Panel & children */
+diff -r 3f9227bd4f1d sys/src/cmd/mothra/libpanel/pldefs.h
+--- a/sys/src/cmd/mothra/libpanel/pldefs.h	Mon Feb 01 22:49:20 2016 +0100
++++ b/sys/src/cmd/mothra/libpanel/pldefs.h	Tue Feb 02 14:03:58 2016 +0100
+@@ -17,7 +17,9 @@
+  * States, also styles
+  */
+ enum{
+-	UP,
++	SUP,	// scrollbar
++	TUP,	// textview
++	UP,	// deprecated
+ 	DOWN1,
+ 	DOWN2,
+ 	DOWN3,
+diff -r 3f9227bd4f1d sys/src/cmd/mothra/libpanel/rtext.c
+--- a/sys/src/cmd/mothra/libpanel/rtext.c	Mon Feb 01 22:49:20 2016 +0100
++++ b/sys/src/cmd/mothra/libpanel/rtext.c	Tue Feb 02 14:03:58 2016 +0100
+@@ -11,7 +11,7 @@
+ #include "rtext.h"
+ 
+ #define LEAD	4	/* extra space between lines */
+-#define BORD	2	/* extra border for images */
++#define BORD	0	/* extra border for images */
+ 
+ Rtext *pl_rtnew(Rtext **t, int space, int indent, int voff, Image *b, Panel *p, Font *f, char *s, int flags, void *user){
+ 	Rtext *new;
+@@ -195,14 +195,14 @@
+ 		&& dr.min.x<r.max.x){
+ 			if(t->b){
+ 				draw(b, insetrect(dr, BORD), t->b, 0, t->b->r.min);
+-				if(t->flags&PL_HOT) border(b, dr, 1, display->black, ZP);
++				if(t->flags&PL_HOT) border(b, dr, 1, txtcol, ZP);
+ 				if(t->flags&PL_STR) {
+ 					line(b, Pt(dr.min.x, dr.min.y), Pt(dr.max.x, dr.max.y),
+ 						Endsquare, Endsquare, 0,
+-						display->black, ZP);
++						txtcol, ZP);
+ 					line(b, Pt(dr.min.x, dr.max.y), Pt(dr.max.x, dr.min.y),
+ 						Endsquare, Endsquare, 0,
+-						display->black, ZP);
++						txtcol, ZP);
+ 				}
+ 				if(t->flags&PL_SEL)
+ 					pl_highlight(b, dr);
+@@ -214,7 +214,7 @@
+ 					pl_stuffbitmap(t->p, bb);
+ 			}
+ 			else{
+-				string(b, dr.min, display->black, ZP, t->font, t->text);
++				string(b, dr.min, txtcol, ZP, t->font, t->text);
+ 				if(t->flags&PL_SEL)
+ 					pl_highlight(b, dr);
+ 				if(t->flags&PL_STR){
+@@ -223,7 +223,7 @@
+ 						sp = Pt(dr.min.x, y);
+ 					line(b, sp, Pt(dr.max.x, y),
+ 						Endsquare, Endsquare, 0,
+-						display->black, ZP);
++						txtcol, ZP);
+ 					sp = Pt(dr.max.x, y);
+ 				} else
+ 					sp = ZP;
+@@ -233,7 +233,7 @@
+ 						lp = Pt(dr.min.x, y);
+ 					line(b, lp, Pt(dr.max.x, y),
+ 						Endsquare, Endsquare, 0,
+-						display->black, ZP);
++						txtcol, ZP);
+ 					lp = Pt(dr.max.x, y);
+ 				} else
+ 					lp = ZP;
+diff -r 3f9227bd4f1d sys/src/cmd/mothra/libpanel/scrollbar.c
+--- a/sys/src/cmd/mothra/libpanel/scrollbar.c	Mon Feb 01 22:49:20 2016 +0100
++++ b/sys/src/cmd/mothra/libpanel/scrollbar.c	Tue Feb 02 14:03:58 2016 +0100
+@@ -16,7 +16,7 @@
+ void pl_drawscrollbar(Panel *p){
+ 	Scrollbar *sp;
+ 	sp=p->data;
+-	sp->interior=pl_outline(p->b, p->r, p->state);
++	sp->interior=pl_outline(p->b, p->r, SUP); /* SUP was p->state */
+ 	pl_sliderupd(p->b, sp->interior, sp->dir, sp->lo, sp->hi);
+ }
+ int pl_hitscrollbar(Panel *g, Mouse *m){
+diff -r 3f9227bd4f1d sys/src/cmd/mothra/libpanel/textview.c
+--- a/sys/src/cmd/mothra/libpanel/textview.c	Mon Feb 01 22:49:20 2016 +0100
++++ b/sys/src/cmd/mothra/libpanel/textview.c	Tue Feb 02 14:03:58 2016 +0100
+@@ -47,7 +47,7 @@
+ 	Point size;
+ 
+ 	tp=p->data;
+-	r=pl_outline(p->b, p->r, UP);
++	r=pl_outline(p->b, p->r, TUP);
+ 	twid=r.max.x-r.min.x;
+ 	if(twid!=tp->twid){
+ 		tp->twid=twid;
+@@ -80,7 +80,7 @@
+ 	if(oldhitword==oldhitfirst)
+ 		pl_passon(oldhitword, m);
+ 	if(m->buttons&OUT)
+-		p->state=UP;
++		p->state=PASSIVE;
+ 	else if(m->buttons&7){
+ 		p->state=DOWN;
+ 		tp->buttons=m->buttons;
+@@ -100,7 +100,7 @@
+ 	}
+ 	else{
+ 		if(p->state==DOWN) hitme=1;
+-		p->state=UP;
++		p->state=PASSIVE;
+ 	}
+ 	if(tp->hitfirst!=oldhitfirst || tp->hitword!=oldhitword){
+ 		plrtseltext(tp->text, tp->hitword, tp->hitfirst);
+@@ -214,7 +214,7 @@
+ 	Textview *tp;
+ 	tp=v->data;
+ 	v->flags=flags|LEAF;
+-	v->state=UP;
++	v->state=PASSIVE;
+ 	v->draw=pl_drawtextview;
+ 	v->hit=pl_hittextview;
+ 	v->type=pl_typetextview;
+diff -r 3f9227bd4f1d sys/src/cmd/mothra/libpanel/textwin.c
+--- a/sys/src/cmd/mothra/libpanel/textwin.c	Mon Feb 01 22:49:20 2016 +0100
++++ b/sys/src/cmd/mothra/libpanel/textwin.c	Tue Feb 02 14:03:58 2016 +0100
+@@ -136,7 +136,7 @@
+ 	er=t->text+last;
+ 	for(r=t->text+first,lp=t->loc+(first-t->top);r!=er;r++,lp++){
+ 		if(lp->y+t->hgt>t->r.max.y){
+-			fprint(2, "chr %C, index %ld of %d, loc %d %d, off bottom\n",
++			fprint(2, "chr %C, index %zd of %d, loc %d %d, off bottom\n",
+ 				*r, lp-t->loc, t->bot-t->top, lp->x, lp->y);
+ 			return;
+ 		}
+@@ -155,7 +155,7 @@
+ 		default:
+ 			buf[runetochar(buf, r)]='\0';
+ 	/***/		pl_clr(t->b, Rpt(*lp, addpt(*lp, stringsize(t->font, buf))));
+-			ur=string(t->b, *lp, display->black, ZP, t->font, buf);
++			ur=string(t->b, *lp, txtcol, ZP, t->font, buf);
+ 			break;
+ 		}
+ 		if(lp[1].y!=lp[0].y)
+diff -r 3f9227bd4f1d sys/src/cmd/mothra/mothra.c
+--- a/sys/src/cmd/mothra/mothra.c	Mon Feb 01 22:49:20 2016 +0100
++++ b/sys/src/cmd/mothra/mothra.c	Tue Feb 02 14:03:58 2016 +0100
+@@ -38,17 +38,17 @@
+ 	0x10, 0x08, 0x14, 0x08, 0x14, 0x28, 0x12, 0x28,
+ 	0x0A, 0x50, 0x16, 0x68, 0x20, 0x04, 0x3F, 0xFC,
+ };
+-Cursor confirmcursor={
++Cursor confirmcurs={
+ 	0, 0,
+-	0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+-	0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+-	0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+-	0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
++	0x0F, 0xBF, 0x0F, 0xBF, 0xFF, 0xFF, 0xFF, 0xFF,
++	0xFF, 0xFF, 0xFF, 0xFE, 0xFF, 0xFE, 0xFF, 0xFE,
++	0xFF, 0xFE, 0xFF, 0xFF, 0x00, 0x03, 0xFF, 0xFF,
++	0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFE, 0xFF, 0xFC,
+ 
+ 	0x00, 0x0E, 0x07, 0x1F, 0x03, 0x17, 0x73, 0x6F,
+ 	0xFB, 0xCE, 0xDB, 0x8C, 0xDB, 0xC0, 0xFB, 0x6C,
+ 	0x77, 0xFC, 0x00, 0x00, 0x00, 0x01, 0x00, 0x03,
+-	0x94, 0xA6, 0x63, 0x3C, 0x63, 0x18, 0x94, 0x90,
++	0x94, 0xA6, 0x63, 0x3C, 0x63, 0x18, 0x94, 0x90
+ };
+ Cursor readingcurs={
+ 	-10, -3,
+@@ -349,15 +349,15 @@
+ 	plinit(screen->depth);
+ 	if(debug) notify(dienow);
+ 	getfonts();
+-	hrule=allocimage(display, Rect(0, 0, 1, 5), screen->chan, 1, DWhite);
++	hrule=allocimage(display, Rect(0, 0, 2048, 5), screen->chan, 1, DBlack);
+ 	if(hrule==0)
+ 		sysfatal("can't allocimage!");
+-	draw(hrule, Rect(0,1,1,3), display->black, 0, ZP);
+-	linespace=allocimage(display, Rect(0, 0, 1, 5), screen->chan, 1, DWhite);
++	draw(hrule, Rect(0,1,1280,3), txtcol, 0, ZP);
++	linespace=display->black;
+ 	if(linespace==0)
+ 		sysfatal("can't allocimage!");
+-	bullet=allocimage(display, Rect(0,0,25, 8), screen->chan, 0, DWhite);
+-	fillellipse(bullet, Pt(4,4), 3, 3, display->black, ZP);
++	bullet=allocimage(display, Rect(0,0,25, 8), screen->chan, 0, DBlack);
++	fillellipse(bullet, Pt(4,4), 3, 3, txtcol, ZP);
+ 	mkpanels();
+ 	unlockdisplay(display);
+ 	eresized(0);
+@@ -422,11 +422,17 @@
+ 				search();
+ 				break;
+ 			case Kright:
+-				sidescroll(text->size.x/4, 1);
++				scrolltext(text->size.y/24, 1); /* down one line */
+ 				break;
+ 			case Kleft:
++				scrolltext(-text->size.y/24, 1); /* up one line */
++				break;
++			case Kins:
+ 				sidescroll(-text->size.x/4, 1);
+ 				break;
++			case Kdel:
++				sidescroll(text->size.x/4, 1);
++				break;
+ 			}
+ 			break;
+ 		case Emouse:
+@@ -449,6 +455,18 @@
+ 		}
+ 	}
+ }
++Cursor confirmcursor={
++	0, 0,
++	0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
++	0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
++	0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
++	0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
++
++	0x00, 0x0E, 0x07, 0x1F, 0x03, 0x17, 0x73, 0x6F,
++	0xFB, 0xCE, 0xDB, 0x8C, 0xDB, 0xC0, 0xFB, 0x6C,
++	0x77, 0xFC, 0x00, 0x00, 0x00, 0x01, 0x00, 0x03,
++	0x94, 0xA6, 0x63, 0x3C, 0x63, 0x18, 0x94, 0x90,
++};
+ int confirm(int b){
+ 	Mouse down, up;
+ 	esetcursor(&confirmcursor);
+diff -r 3f9227bd4f1d sys/src/cmd/mothra/mothra.h
+--- a/sys/src/cmd/mothra/mothra.h	Mon Feb 01 22:49:20 2016 +0100
++++ b/sys/src/cmd/mothra/mothra.h	Tue Feb 02 14:03:58 2016 +0100
+@@ -1,7 +1,7 @@
+ enum{
+ 	NWWW=64,	/* # of pages we hold in the log */
+-	NXPROC=5,	/* # of parallel procs loading the pix */
+-	NPIXMB=8,	/* megabytes of image data to keep arround */
++	NXPROC=16,	/* # of parallel procs loading the pix */
++	NPIXMB=48,	/* megabytes of image data to keep arround */
+ 	NNAME=512,
+ 	NLINE=256,
+ 	NAUTH=128,

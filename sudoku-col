@@ -1,0 +1,75 @@
+diff -r 3b33f587ad27 sys/src/games/sudoku/sudoku.c
+--- a/sys/src/games/sudoku/sudoku.c	Wed Oct 03 00:53:10 2018 +0200
++++ b/sys/src/games/sudoku/sudoku.c	Sat Oct 06 16:12:35 2018 +0200
+@@ -14,10 +14,10 @@
+ 
+ Image *background;	/* DPaleyellow */
+ Image *backselect;	/* DPalebluegreen */
+-Image *blink;		/* DDarkyellow */
+ Image *brdr;		/* 0x55555555 */
+ Image *fixed;		/* DBlue */
+ Image *wrong;		/* DRed */
++Image *normal;
+ Image *dig[10];		/* digit masks */
+ 
+ Dir *dir;
+@@ -200,7 +200,7 @@
+ 	int i;
+ 
+ 	for(i = 0; i < Psize; i++) {
+-		drawcell(i / Brdsize, i % Brdsize, brd[i].digit, brd[i].locked ? fixed : display->black);
++		drawcell(i / Brdsize, i % Brdsize, brd[i].digit, brd[i].locked ? fixed : normal);
+ 	}
+ }
+ 
+@@ -214,7 +214,7 @@
+ 			drawcell(i / Brdsize, i % Brdsize, brd[i].digit, fixed);
+ 		else 
+ 			drawcell(i / Brdsize, i % Brdsize, brd[i].digit, 
+-					checkpossible(brd, i / Brdsize, i % Brdsize, brd[i].digit) ? display->black : wrong);
++					checkpossible(brd, i / Brdsize, i % Brdsize, brd[i].digit) ? normal : wrong);
+ 	}
+ }
+ 
+@@ -224,7 +224,7 @@
+ 	Point l1, l2;
+ 	int i;
+ 
+-	draw(screen, screen->r, brdr, nil, ZP);
++	draw(screen, screen->r, display->black, nil, ZP);
+ 	draw(screen, insetrect(screen->r, Border), background, nil, ZP);
+ 	for(i = 0; i < Brdsize; i++) {
+ 		l1 = addpt(screen->r.min, Pt(i*Square, Square));
+@@ -253,7 +253,7 @@
+ 	r = insetrect(r, Border);
+ 	r.max = addpt(r.max, Pt(2, 2));
+ 	draw(screen, rectaddpt(r, screen->r.min), selected ? backselect : background, nil, ZP);
+-	draw(screen, rectaddpt(r, screen->r.min), display->black, dig[digit-1], ZP);
++	draw(screen, rectaddpt(r, screen->r.min), normal, dig[digit-1], ZP);
+ }
+ 
+ void
+@@ -267,17 +267,17 @@
+ 		sysfatal("can't reattach to window");
+ 	
+ 	if(background == nil) 
+-		background = eallocimage(Rect(0, 0, 1, 1), 1, DPaleyellow);
++		background = display->black;
+ 	if(backselect == nil) 
+-		backselect = eallocimage(Rect(0, 0, 1, 1), 1, DPalebluegreen);
+-	if(blink == nil) 
+-		blink = eallocimage(Rect(0, 0, 1, 1), 1, DDarkyellow);
++		backselect = eallocimage(Rect(0, 0, 1, 1), 1, 0x440000FF);
+ 	if(brdr == nil)
+-		brdr = eallocimage(Rect(0, 0, 1, 1), 1, 0x55555555);
++		brdr = eallocimage(Rect(0, 0, 1, 1), 1, 0x222222FF);
+ 	if(fixed == nil)
+-		fixed = eallocimage(Rect(0, 0, 1, 1), 1, DBlue);
++		fixed = eallocimage(Rect(0, 0, 1, 1), 1, 0x550000FF);
+ 	if(wrong == nil)
+ 		wrong = eallocimage(Rect(0, 0, 1, 1), 1, DRed);
++	if(normal == nil)
++		normal = eallocimage(Rect(0, 0, 1, 1), 1, 0x884400FF);
+ 	if(dig[0] == nil) {
+ 		for(i = 0; i < 9; i++) {
+ 			snprint(path, 256, "%s/%d.bit", imgdir, i+1);

@@ -1,0 +1,17 @@
+this is necessary with doom-sndmus.patch to prevent nsec() being called
+trillions of times per frame because the game is running too fast...
+(i think)
+
+diff -Naur a/sys/src/games/doom/d_net.c b/sys/src/games/doom/d_net.c
+--- a/sys/src/games/doom/d_net.c	Fri May 15 05:42:00 2015
++++ b/sys/src/games/doom/d_net.c	Wed Sep 16 07:47:17 2015
+@@ -722,7 +722,8 @@
+ 	{
+ 	    M_Ticker ();
+ 	    return;
+-	} 
++	}
++	sleep(1);
+     }
+     
+     // run the count * ticdup dics

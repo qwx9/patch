@@ -1,0 +1,67 @@
+--- /mnt/git/branch/heads/master/tree/run.c	Thu Jun 11 15:28:29 2015
++++ run.c	Sun Jan  5 12:25:02 2020
+@@ -100,15 +100,32 @@ setfb(void)
+ 	if(fprint(fd, "size 1280x1024x32 x8b8g8r8") < 0)
+ //	if(fprint(fd, "size 1280x1024x16 r5g6b5") < 0)
+ 		sysfatal("fprint: %r");
+-	if(fprint(fd, "addr %#ux", v) < 0)
++	if(fprint(fd, "addr %#p", v) < 0)
+ 		sysfatal("fprint: %r");
+ }
+ 
+ void
++setmouse(void *v)
++{
++	int fd;
++	static int shat;
++
++	if(shat)
++		return;
++	if((fd = open("/dev/mousectl", OWRITE)) < 0)
++		return;
++	if(fprint(fd, "addr %#p", v) < 0)
++		fprint(2, "shit: %r\n");
++	else
++		shat++;
++	close(fd);
++}
++
++void
+ main()
+ {
+ 	ulong *r;
+-	uchar *rr, s, s1;
++	uchar *rr, s;
+ 	ulong addr;
+ 	int twolane, fast, emph, swing;
+ 	
+@@ -140,16 +157,17 @@ main()
+ 	addr = getpa();
+ 	r[START] = addr;
+ 	r[END] = addr + 1280*1024*4;
+-//	setfb();
++	setfb();
+ 
+ 	r[CTRL] = 1<<31;
+ 	//goto manual;
+ 	for(;;){
+ 		sleep(100);
+-		print("%ux %x\n", r[STS], rr[0x202]);
++		setmouse(r+CURS);
++		print("%lux %x\n", r[STS], rr[0x202]);
+ 	}
+ 
+-manual:
++//manual:
+ 	r[CTRL] = 1 << 13 | swing << 6 | emph << 4 | twolane << 1 | fast;
+ 	rr[TRAINING_LANE0_SET] = emph << 4 | swing;
+ 	rr[LINK_BW_SET] = fast ? 0x0A : 0x06;
+@@ -177,7 +195,7 @@ manual:
+ 
+ 	for(;;){
+ 		sleep(1000);
+-		print("%x %x %x\n", r[STS], rr[0x202], rr[0x204]);
++		print("%lx %x %x\n", r[STS], rr[0x202], rr[0x204]);
+ 	}
+ 	
+ /*	r[HVACT] = 1024 << 16 | 768;

@@ -1,0 +1,18 @@
+troff: inflate maximum size of character set
+
+this enables one to use fonts like unifont with troff.
+
+don't use fonts like unifont with troff.
+
+diff -r 79938a709ae3 sys/src/cmd/troff/tdef.h
+--- a/sys/src/cmd/troff/tdef.h	Wed Jan 30 18:22:52 2019 +0100
++++ b/sys/src/cmd/troff/tdef.h	Mon Feb 11 10:44:11 2019 +0100
+@@ -190,7 +190,7 @@
+ 		unnamed ones and \N's)
+ 	*/
+ 
+-#define	NCHARS	(8*1024)	/* maximum size of troff character set*/
++#define	NCHARS	(64*1024)	/* maximum size of troff character set*/
+ 
+ 
+ 	/* However for nroff you want only :

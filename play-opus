@@ -1,0 +1,24 @@
+diff -r d6c26034ff13 rc/bin/play
+--- a/rc/bin/play	Sun Jan 12 00:19:39 2020 +0100
++++ b/rc/bin/play	Sun Jan 12 17:30:21 2020 +0100
+@@ -46,8 +46,10 @@
+ 					}
+ 				}
+ 			}
+-		case *ogg* *vorbis*
++		case *ogg*vorbis*
+ 			audio/oggdec
++		case *ogg*opus*
++			audio/opusdec --quiet --rate 44100 --force-stereo - -
+ 		case *mp3* *mpeg*
+ 			audio/mp3dec
+ 		case *wave*
+@@ -68,6 +70,8 @@
+ 				audio/mp3dec
+ 			case *.ogg *.OGG
+ 				audio/oggdec
++			case *.opus *.OPUS
++				audio/opusdec --quiet --rate 44100 --force-stereo - -
+ 			case *.wav *.WAV
+ 				audio/wavdec
+ 			case *.flac *.FLAC

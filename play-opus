@@ -9,7 +9,7 @@ diff -r d6c26034ff13 rc/bin/play
 +		case *ogg*vorbis*
  			audio/oggdec
 +		case *ogg*opus*
-+			audio/opusdec --quiet --rate 44100 --force-stereo - -
++			audio/opusdec
  		case *mp3* *mpeg*
  			audio/mp3dec
  		case *wave*
@@ -18,7 +18,7 @@ diff -r d6c26034ff13 rc/bin/play
  			case *.ogg *.OGG
  				audio/oggdec
 +			case *.opus *.OPUS
-+				audio/opusdec --quiet --rate 44100 --force-stereo - -
++				audio/opusdec
  			case *.wav *.WAV
  				audio/wavdec
  			case *.flac *.FLAC

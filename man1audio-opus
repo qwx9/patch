@@ -1,0 +1,99 @@
+diff -r 856b7143c3eb sys/man/1/audio
+--- a/sys/man/1/audio	Sun Jan 12 03:40:42 2020 +0000
++++ b/sys/man/1/audio	Mon Jan 13 09:20:48 2020 +0100
+@@ -14,6 +14,13 @@
+ .B audio/wavdec
+ .br
+ .B audio/sundec
++.br
++.B audio/opusdec
++[
++.B -h
++] [
++.I options
++]
+ .PP
+ .B audio/oggenc
+ .br
+@@ -40,6 +47,13 @@
+ ] [
+ .I "long or silly options"
+ ]
++.br
++.B audio/opusenc
++[
++.B -h
++] [
++.I options
++]
+ .PP
+ .B audio/pcmconv
+ [
+@@ -86,10 +100,11 @@
+ The encoders read PCM on standard input and produce compressed audio
+ on standard output.
+ .PP
+-.I Oggenc
++.IR Oggenc ,
++.I mp3enc
+ and
+-.I mp3enc
+-produce OGG Vorbis and MP3 audio. For
++.I opusenc
++produce OGG Vorbis, MP3, and OGG Opus audio. For
+ .I mp3enc,
+ the MP3 file will use `constant bit-rate' (CBR) encoding by default, 
+ but that can be changed via
+@@ -98,12 +113,16 @@
+ or
+ .BR -v
+ (variable bitrate, VBR).
++.I Opusenc
++uses VBR by default.
+ .PP
+ .I Oggenc
+-accepts raw PCM in the same byte order as
++and
++.I opusenc
++accept raw PCM in the same byte order as
+ .B /dev/audio
+ (little-endian),
+-t
++but
+ .I mp3enc -r
+ expects big-endian.
+ .SS Options
+@@ -230,6 +249,20 @@
+ .B --voice
+ experimental voice mode
+ .SS
++Like
++.IR mp3enc ,
++opusenc accepts a number of long options to configure encoding parameters,
++input options and metadata.
++By default, it assumes raw PCM in the same byte order as
++.B /dev/audio
++with a 44.1KHz sampling rate and two channels.
++Similarly,
++.I opusdec
++will output that same format by default.
++Known knobs for both programs can be displayed with the
++.B -h
++option.
++.SS
+ .I Pcmconv
+ is a helper program used to convert various PCM sample formats. The
+ .B -i
+@@ -342,6 +375,12 @@
+ .EX
+ dd -conv swab | audio/mp3enc -a -r -m m --resample 16 -b 24
+ .EE
++.LP
++Transcoding a FLAC file to Ogg Opus with slightly higher quality settings than default:
++.IP
++.EX
++audio/flacdec <foo.flac | audio/opusenc --music --downmix-stereo --bitrate 128 >foo.opus
++.EE
+ .SH SOURCE
+ .B /sys/src/cmd/audio
+ .SH "SEE ALSO"

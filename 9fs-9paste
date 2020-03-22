@@ -4,7 +4,7 @@ diff -r 2c3766a9188f rc/bin/9fs
 @@ -70,6 +70,8 @@
  	vacfs -m /n/`{basename $1 .vac} `{cat $score}
  case wiki
- 	srv -m 'net!plan9.bell-labs.com!wiki' wiki /mnt/wiki
+	srv -m 'net!9p.io!wiki' wiki /mnt/wiki
 +case 9paste
 +	srv -n fs.9paste.net 9paste /n/9paste
  case *

@@ -1,6 +1,6 @@
-diff -r 3eeb3c31adff sys/src/cmd/file.c
---- a/sys/src/cmd/file.c	Sun Mar 08 05:52:23 2020 +0100
-+++ b/sys/src/cmd/file.c	Mon Mar 09 01:19:09 2020 +0100
+diff -r 19baa5600a90 sys/src/cmd/file.c
+--- a/sys/src/cmd/file.c	Mon Apr 06 01:31:35 2020 +0200
++++ b/sys/src/cmd/file.c	Mon Apr 06 04:34:43 2020 +0200
 @@ -153,6 +153,8 @@
  int	istga(void);
  int	ismp3(void);
@@ -16,8 +16,8 @@ diff -r 3eeb3c31adff sys/src/cmd/file.c
  	istga,
 +	isoggvorbis,
 +	isoggopus,
- 	ismp3,
  	ismp4,
+ 	ismp3,
  
 @@ -838,7 +842,6 @@
  	"\033%-12345X",		"HPJCL file",		9,	"application/hpjcl",

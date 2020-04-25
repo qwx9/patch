@@ -1,0 +1,321 @@
+diff -Naur a/sys/src/cmd/samterm/flayer.h b/sys/src/cmd/samterm/flayer.h
+--- a/sys/src/cmd/samterm/flayer.h	Wed Jan 18 01:12:54 2012
++++ b/sys/src/cmd/samterm/flayer.h	Tue Feb  4 05:48:08 2020
+@@ -42,9 +42,9 @@
+ void	flupfront(Flayer*);
+ Flayer	*flwhich(Point);
+ 
+-#define	FLMARGIN	4
++#define	FLMARGIN	1
+ #define	FLSCROLLWID	12
+-#define	FLGAP		4
++#define	FLGAP		0
+ 
+ extern	Image	*maincols[NCOL];
+ extern	Image	*cmdcols[NCOL];
+diff -Naur a/sys/src/cmd/samterm/main.c b/sys/src/cmd/samterm/main.c
+--- a/sys/src/cmd/samterm/main.c	Wed Apr 22 22:51:59 2020
++++ b/sys/src/cmd/samterm/main.c	Fri Feb 21 23:51:07 2020
+@@ -42,7 +42,7 @@
+ 	scratch = alloc(100*RUNESIZE);
+ 	nscralloc = 100;
+ 	r = screen->r;
+-	r.max.y = r.min.y+Dy(r)/5;
++	r.max.y = r.min.y+(6*font->height)+(3*FLMARGIN);
+ 	flstart(screen->clipr);
+ 	rinit(&cmd.rasp);
+ 	flnew(&cmd.l[0], gettext, 1, &cmd);
+@@ -235,30 +235,64 @@
+ 		getmouse();
+ }
+ 
+-int
+-getr(Rectangle *rp)
++Rectangle
++inflatepoint(Point p)
+ {
+-	Point p;
++	Rectangle *c;
+ 	Rectangle r;
+-
+-	*rp = getrect(3, mousectl);
+-	if(rp->max.x && rp->max.x-rp->min.x<=5 && rp->max.y-rp->min.y<=5){
+-		p = rp->min;
+-		r = cmd.l[cmd.front].entire;
+-		*rp = screen->r;
+-		if(cmd.nwin==1){
+-			if (p.y <= r.min.y)
+-				rp->max.y = r.min.y;
+-			else if (p.y >= r.max.y)
+-				rp->min.y = r.max.y;
+-			if (p.x <= r.min.x)
+-				rp->max.x = r.min.x;
+-			else if (p.x >= r.max.x)
+-				rp->min.x = r.max.x;
+-		}
++	
++	r = screen->r;
++	c = &cmd.l[cmd.front].entire;
++	if(ptinrect(p, *c))
++		return r;
++	// L
++	if(p.x < c->min.x)
++		r.max.x = c->min.x;
++	// R
++	else if(p.x >= c->max.x)
++		r.min.x = c->max.x;
++	// M
++	else{
++		r.min.x = c->min.x;
++		r.max.x = c->max.x;
++		// A
++		if(p.y <= c->min.y)
++			r.max.y = c->min.y;
++		// B
++		else
++			r.min.y = c->max.y;
+ 	}
+-	return rectclip(rp, screen->r) &&
+-	   rp->max.x-rp->min.x>100 && rp->max.y-rp->min.y>40;
++	return r;
++}
++
++Rectangle
++defaultrect(void)
++{
++	Rectangle *c;
++	Rectangle L, M, R;
++
++	c = &cmd.l[cmd.front].entire;
++	L = inflatepoint(Pt(c->min.x - 1, c->min.y));
++	M = inflatepoint(Pt(c->min.x, c->max.y));
++	R = inflatepoint(Pt(c->max.x + 1, c->min.y));
++	if(Dx(L) >= Dx(M) && Dx(L) >= Dx(R))
++		return L;
++	else if(Dx(M) > Dx(L) && Dx(M) > Dx(R))
++		return M;
++	return R;
++}
++
++int
++promptrect(Rectangle *r)
++{
++	*r = getrect(3, mousectl);
++	if(eqrect(*r, Rect(0,0,0,0)))
++		return 0;
++	if(Dx(*r) < 5 && Dy(*r) < 5)
++		*r = inflatepoint(r->min);
++	if(rectclip(r, screen->r) == 0)
++		*r = defaultrect();
++	return 1;
+ }
+ 
+ void
+@@ -298,11 +332,9 @@
+ void
+ paste(Text *t, int w)
+ {
+-	if(snarflen){
+-		cut(t, w, 0, 0);
+-		t->lock++;
+-		outTsl(Tpaste, t->tag, t->l[w].p0);
+-	}
++	cut(t, w, 0, 0);
++	t->lock++;
++	outTsl(Tpaste, t->tag, t->l[w].p0);
+ }
+ 
+ void
+diff -Naur a/sys/src/cmd/samterm/menu.c b/sys/src/cmd/samterm/menu.c
+--- a/sys/src/cmd/samterm/menu.c	Wed Jan 18 01:12:54 2012
++++ b/sys/src/cmd/samterm/menu.c	Fri Feb 21 23:51:07 2020
+@@ -27,7 +27,6 @@
+ 	Snarf,
+ 	Plumb,
+ 	Look,
+-	Exch,
+ 	Search,
+ 	NMENU2 = Search,
+ 	Send = Search,
+@@ -50,7 +49,6 @@
+ 	"snarf",
+ 	"plumb",
+ 	"look",
+-	"<rio>",
+ 	0,		/* storage for last pattern */
+ };
+ 
+@@ -97,12 +95,6 @@
+ 			outTsll(Tplumb, t->tag, which->p0, which->p1);
+ 		break;
+ 
+-	case Exch:
+-		snarf(t, w);
+-		outT0(Tstartsnarf);
+-		setlock();
+-		break;
+-
+ 	case Look:
+ 		outTsll(Tlook, t->tag, which->p0, which->p1);
+ 		setlock();
+@@ -127,58 +119,43 @@
+ 	int m, i;
+ 	Text *t;
+ 
++	l = flwhich(mousep->xy);
+ 	mw = -1;
+ 	switch(m = menuhit(3, mousectl, &menu3, nil)){
+ 	case -1:
+ 		break;
+ 
+ 	case New:
+-		if(!hostlock)
+-			sweeptext(1, 0);
++		if(hostlock)
++			break;
++		sweeptext(1, 0);
+ 		break;
+ 
+ 	case Zerox:
+ 	case Resize:
+-		if(!hostlock){
+-			setcursor(mousectl, &bullseye);
+-			buttons(Down);
+-			if((mousep->buttons&4) && (l = flwhich(mousep->xy)) && getr(&r))
+-				duplicate(l, r, l->f.font, m==Resize);
+-			else
+-				setcursor(mousectl, cursor);
+-			buttons(Up);
+-		}
++		if(hostlock || l == nil)
++			break;
++		if(promptrect(&r))
++			duplicate(l, r, l->f.font, m == Resize);
+ 		break;
+ 
+ 	case Close:
+-		if(!hostlock){
+-			setcursor(mousectl, &bullseye);
+-			buttons(Down);
+-			if((mousep->buttons&4) && (l = flwhich(mousep->xy)) && !hostlock){
+-				t=(Text *)l->user1;
+-				if (t->nwin>1)
+-					closeup(l);
+-				else if(t!=&cmd) {
+-					outTs(Tclose, t->tag);
+-					setlock();
+-				}
+-			}
+-			setcursor(mousectl, cursor);
+-			buttons(Up);
++		if(hostlock || l == nil)
++			break;
++		t=(Text *)l->user1;
++		if (t->nwin>1)
++			closeup(l);
++		else if(t!=&cmd) {
++			outTs(Tclose, t->tag);
++			setlock();
+ 		}
+ 		break;
+ 
+ 	case Write:
+-		if(!hostlock){
+-			setcursor(mousectl, &bullseye);
+-			buttons(Down);
+-			if((mousep->buttons&4) && (l = flwhich(mousep->xy))){
+-				outTs(Twrite, ((Text *)l->user1)->tag);
+-				setlock();
+-			}else
+-				setcursor(mousectl, cursor);
+-			buttons(Up);
+-		}
++		if(hostlock || l == nil)
++			break;
++		outTs(Twrite, ((Text *)l->user1)->tag);
++		setlock();
+ 		break;
+ 
+ 	default:
+@@ -198,30 +175,31 @@
+ 	}
+ }
+ 
+-
+ Text *
+ sweeptext(int new, int tag)
+ {
+ 	Rectangle r;
+ 	Text *t;
+ 
+-	if(getr(&r) && (t = malloc(sizeof(Text)))){
+-		memset((void*)t, 0, sizeof(Text));
+-		current((Flayer *)0);
+-		flnew(&t->l[0], gettext, 0, (char *)t);
+-		flinit(&t->l[0], r, font, maincols);	/*bnl*/
+-		t->nwin = 1;
++	if((t = mallocz(sizeof(*t), 1)) == nil)
++		return nil;
++	if(new)
++		r = inflatepoint(mousep->xy);
++	else
++		r = defaultrect();
++	current((Flayer *)0);
++	flnew(&t->l[0], gettext, 0, (char *)t);
++	flinit(&t->l[0], r, font, maincols);	/*bnl*/
++	t->nwin = 1;
++	rinit(&t->rasp);
++	if(new)
++		startnewfile(Tstartnewfile, t);
++	else{
+ 		rinit(&t->rasp);
+-		if(new)
+-			startnewfile(Tstartnewfile, t);
+-		else{
+-			rinit(&t->rasp);
+-			t->tag = tag;
+-			startfile(t);
+-		}
+-		return t;
++		t->tag = tag;
++		startfile(t);
+ 	}
+-	return 0;
++	return t;
+ }
+ 
+ int
+diff -Naur a/sys/src/cmd/samterm/samterm.h b/sys/src/cmd/samterm/samterm.h
+--- a/sys/src/cmd/samterm/samterm.h	Wed Apr 22 22:51:59 2020
++++ b/sys/src/cmd/samterm/samterm.h	Fri Feb 21 23:51:07 2020
+@@ -119,7 +119,6 @@
+ int	center(Flayer*, long);
+ int	xmenuhit(int, Menu*);
+ void	buttons(int);
+-int	getr(Rectangle*);
+ void	current(Flayer*);
+ void	duplicate(Flayer*, Rectangle, Font*, int);
+ void	startfile(Text*);
+@@ -163,6 +162,9 @@
+ void	dumperrmsg(int, int, int, int);
+ int	screensize(int*,int*);
+ void	getmouse(void);
++Rectangle inflatepoint(Point);
++Rectangle	defaultrect(void);
++int	promptrect(Rectangle*);
+ 
+ #include "mesg.h"
+ 
+diff -Naur a/sys/src/cmd/samterm/scroll.c b/sys/src/cmd/samterm/scroll.c
+--- a/sys/src/cmd/samterm/scroll.c	Wed Apr 22 22:15:05 2020
++++ b/sys/src/cmd/samterm/scroll.c	Tue Feb  4 05:48:08 2020
+@@ -111,9 +111,6 @@
+ 	int x, y, my, oy, h;
+ 	long p0;
+ 
+-	if(l->visible==None)
+-		return;
+-
+ 	s = l->scroll;
+ 	x = s.min.x+FLSCROLLWID/2;
+ 	scr = scrpos(l->scroll, l->origin, l->origin+l->f.nchars, tot);

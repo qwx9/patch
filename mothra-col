@@ -1,0 +1,145 @@
+diff -Naur /sys/src/cmd/mothra/libpanel/draw.c /sys/src/cmd/mothra/libpanel/draw.c
+--- /sys/src/cmd/mothra/libpanel/draw.c	Sun Apr 26 11:02:48 2020
++++ /sys/src/cmd/mothra/libpanel/draw.c	Sun Apr 26 10:57:50 2020
+@@ -15,17 +15,18 @@
+ #define	CKBORDER 2	/* space around X inside frame */
+ static int plldepth;
+ static Image *pl_white, *pl_light, *pl_dark, *pl_black, *pl_hilit;
+-Image *pl_blue;
++Image *pl_blue, *pl_txt;
+ int pl_drawinit(int ldepth){
+ 	plldepth=ldepth;
+ 	/* mono */
+-	pl_white=allocimage(display, Rect(0,0,1,1), screen->chan, 1, 0xFFFFFFFF);
+-	pl_light=allocimage(display, Rect(0,0,1,1), screen->chan, 1, 0xFFFFFFFF);
+-	pl_dark=allocimage(display, Rect(0,0,1,1), screen->chan, 1, 0x555555FF);
+-	pl_black=allocimage(display, Rect(0,0,1,1), screen->chan, 1, 0x000000FF);
+-	pl_hilit=allocimage(display, Rect(0,0,1,1), CHAN1(CAlpha,8), 1, 0x80);
+-	pl_blue=allocimage(display, Rect(0,0,1,1), RGB24, 1, 0x0000FFFF);
+-	if(pl_white==0 || pl_light==0 || pl_black==0 || pl_dark==0 || pl_blue==0) sysfatal("allocimage: %r");
++	pl_white=display->black;
++	pl_light=display->black;
++	pl_dark=allocimage(display, Rect(0,0,1,1), CMAP8, 1, 0x222222FF);
++	pl_black=allocimage(display, Rect(0,0,1,1), CMAP8, 1, 0x770000FF);
++ 	pl_hilit=allocimage(display, Rect(0,0,1,1), CHAN1(CAlpha,8), 1, 0x80);
++	pl_blue=allocimage(display, Rect(0,0,1,1), CMAP8, 1, 0x666666FF);
++	pl_txt=allocimage(display, Rect(0,0,1,1), CMAP8, 1, 0x884400FF);
++	if(pl_white==0 || pl_light==0 || pl_black==0 || pl_dark==0 || pl_blue==0 || pl_txt==0) sysfatal("allocimage: %r");
+ 	return 1;
+ }
+ void pl_relief(Image *b, Image *ul, Image *lr, Rectangle r, int wid){
+@@ -289,7 +290,7 @@
+ 	draw(b, r, pl_dark, pl_hilit, ZP);
+ }
+ void pl_clr(Image *b, Rectangle r){
+-	draw(b, r, display->white, 0, ZP);
++	draw(b, r, pl_white, 0, ZP);
+ }
+ void pl_fill(Image *b, Rectangle r){
+ 	draw(b, r, plldepth==0? pl_white : pl_light, 0, ZP);
+diff -Naur /sys/src/cmd/mothra/libpanel/message.c /sys/src/cmd/mothra/libpanel/message.c
+--- /sys/src/cmd/mothra/libpanel/message.c	Sun Apr 26 11:02:37 2020
++++ /sys/src/cmd/mothra/libpanel/message.c	Sun Apr 26 10:58:41 2020
+@@ -29,7 +29,7 @@
+ 			end=s;
+ 		c=*end;
+ 		*end='\0';
+-		string(b, where, display->black, ZP, f, start);
++		string(b, where, pl_txt, ZP, f, start);
+ 		*end=c;
+ 		where.y+=font->height;
+ 		s=end;
+diff -Naur /sys/src/cmd/mothra/libpanel/panel.h /sys/src/cmd/mothra/libpanel/panel.h
+--- /sys/src/cmd/mothra/libpanel/panel.h	Sun Apr 26 11:02:48 2020
++++ /sys/src/cmd/mothra/libpanel/panel.h	Sun Apr 26 10:58:53 2020
+@@ -109,7 +109,7 @@
+ 
+ Panel *plkbfocus;			/* the panel in keyboard focus */
+ 
+-extern Image *pl_blue;
++extern Image *pl_blue, *pl_txt;
+ 
+ int plinit(int);			/* initialization */
+ void plpack(Panel *, Rectangle);	/* figure out where to put the Panel & children */
+diff -Naur /sys/src/cmd/mothra/libpanel/rtext.c /sys/src/cmd/mothra/libpanel/rtext.c
+--- /sys/src/cmd/mothra/libpanel/rtext.c	Sun Apr 26 11:02:48 2020
++++ /sys/src/cmd/mothra/libpanel/rtext.c	Sun Apr 26 11:00:23 2020
+@@ -195,13 +195,14 @@
+ 		&& dr.min.x<r.max.x){
+ 			if(t->b){
+ 				draw(b, insetrect(dr, BORD), t->b, 0, t->b->r.min);
++				if(t->flags&PL_HOT) border(b, dr, 1, pl_blue, ZP);
+ 				if(t->flags&PL_STR) {
+ 					line(b, Pt(dr.min.x, dr.min.y), Pt(dr.max.x, dr.max.y),
+ 						Endsquare, Endsquare, 0,
+-						display->black, ZP);
++						pl_txt, ZP);
+ 					line(b, Pt(dr.min.x, dr.max.y), Pt(dr.max.x, dr.min.y),
+ 						Endsquare, Endsquare, 0,
+-						display->black, ZP);
++						pl_txt, ZP);
+ 				}
+ 				if(t->flags&PL_SEL)
+ 					pl_highlight(b, dr);
+@@ -216,7 +217,7 @@
+ 				if(t->flags&PL_HOT)
+ 					string(b, dr.min, pl_blue, ZP, t->font, t->text);
+ 				else
+-					string(b, dr.min,display->black, ZP, t->font, t->text);
++					string(b, dr.min, pl_txt, ZP, t->font, t->text);
+ 				if(t->flags&PL_SEL)
+ 					pl_highlight(b, dr);
+ 				if(t->flags&PL_STR){
+@@ -225,10 +226,19 @@
+ 						sp = Pt(dr.min.x, y);
+ 					line(b, sp, Pt(dr.max.x, y),
+ 						Endsquare, Endsquare, 0,
+-						display->black, ZP);
++						pl_txt, ZP);
+ 					sp = Pt(dr.max.x, y);
+ 				} else
+ 					sp = ZP;
++				if(t->flags&PL_HOT){
++					int y = dr.max.y - 1;
++					if(lp.y != y)
++						lp = Pt(dr.min.x, y);
++					line(b, lp, Pt(dr.max.x, y),
++						Endsquare, Endsquare, 0,
++						pl_blue, ZP);
++					lp = Pt(dr.max.x, y);
++				} else
+ 					lp = ZP;
+ 				continue;
+ 			}
+diff -Naur /sys/src/cmd/mothra/libpanel/textwin.c /sys/src/cmd/mothra/libpanel/textwin.c
+--- /sys/src/cmd/mothra/libpanel/textwin.c	Sun Apr 26 11:02:48 2020
++++ /sys/src/cmd/mothra/libpanel/textwin.c	Sun Apr 26 11:00:47 2020
+@@ -155,7 +155,7 @@
+ 		default:
+ 			buf[runetochar(buf, r)]='\0';
+ 	/***/		pl_clr(t->b, Rpt(*lp, addpt(*lp, stringsize(t->font, buf))));
+-			ur=string(t->b, *lp, display->black, ZP, t->font, buf);
++			ur=string(t->b, *lp, pl_txt, ZP, t->font, buf);
+ 			break;
+ 		}
+ 		if(lp[1].y!=lp[0].y)
+diff -Naur /sys/src/cmd/mothra/mothra.c /sys/src/cmd/mothra/mothra.c
+--- /sys/src/cmd/mothra/mothra.c	Sun Apr 26 11:02:37 2020
++++ /sys/src/cmd/mothra/mothra.c	Sun Apr 26 11:02:06 2020
+@@ -355,12 +355,10 @@
+ 	hrule=allocimage(display, Rect(0, 0, 1, 5), screen->chan, 1, DWhite);
+ 	if(hrule==0)
+ 		sysfatal("can't allocimage!");
+-	draw(hrule, Rect(0,1,1,3), display->black, 0, ZP);
+-	linespace=allocimage(display, Rect(0, 0, 1, 5), screen->chan, 1, DWhite);
+-	if(linespace==0)
+-		sysfatal("can't allocimage!");
+-	bullet=allocimage(display, Rect(0,0,25, 8), screen->chan, 0, DWhite);
+-	fillellipse(bullet, Pt(4,4), 3, 3, display->black, ZP);
++	draw(hrule, Rect(0,1,1,3), pl_txt, 0, ZP);
++	linespace=display->black;
++	bullet=allocimage(display, Rect(0,0,25, 8), screen->chan, 0, DBlack);
++	fillellipse(bullet, Pt(4,4), 3, 3, pl_txt, ZP);
+ 	mkpanels();
+ 	unlockdisplay(display);
+ 	eresized(0);

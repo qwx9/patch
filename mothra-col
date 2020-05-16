@@ -1,18 +1,16 @@
-diff -Naur /sys/src/cmd/mothra/libpanel/draw.c /sys/src/cmd/mothra/libpanel/draw.c
---- /sys/src/cmd/mothra/libpanel/draw.c	Sun Apr 26 11:02:48 2020
-+++ /sys/src/cmd/mothra/libpanel/draw.c	Sun Apr 26 10:57:50 2020
-@@ -15,17 +15,18 @@
+diff -r 8006152d13d2 sys/src/cmd/mothra/libpanel/draw.c
+--- a/sys/src/cmd/mothra/libpanel/draw.c	Tue Apr 28 20:51:19 2020 -0700
++++ b/sys/src/cmd/mothra/libpanel/draw.c	Wed Apr 29 10:59:40 2020 +0200
+@@ -14,15 +14,16 @@
+ #define	CKINSET	1	/* space around check mark frame */
  #define	CKBORDER 2	/* space around X inside frame */
- static int plldepth;
  static Image *pl_white, *pl_light, *pl_dark, *pl_black, *pl_hilit;
 -Image *pl_blue;
 +Image *pl_blue, *pl_txt;
- int pl_drawinit(int ldepth){
- 	plldepth=ldepth;
- 	/* mono */
+ int pl_drawinit(void){
 -	pl_white=allocimage(display, Rect(0,0,1,1), screen->chan, 1, 0xFFFFFFFF);
 -	pl_light=allocimage(display, Rect(0,0,1,1), screen->chan, 1, 0xFFFFFFFF);
--	pl_dark=allocimage(display, Rect(0,0,1,1), screen->chan, 1, 0x555555FF);
+-	pl_dark=allocimage(display, Rect(0,0,1,1), screen->chan, 1, 0x777777FF);
 -	pl_black=allocimage(display, Rect(0,0,1,1), screen->chan, 1, 0x000000FF);
 -	pl_hilit=allocimage(display, Rect(0,0,1,1), CHAN1(CAlpha,8), 1, 0x80);
 -	pl_blue=allocimage(display, Rect(0,0,1,1), RGB24, 1, 0x0000FFFF);
@@ -27,8 +25,8 @@ diff -Naur /sys/src/cmd/mothra/libpanel/draw.c /sys/src/cmd/mothra/libpanel/draw
 +	if(pl_white==0 || pl_light==0 || pl_black==0 || pl_dark==0 || pl_blue==0 || pl_txt==0) sysfatal("allocimage: %r");
  	return 1;
  }
- void pl_relief(Image *b, Image *ul, Image *lr, Rectangle r, int wid){
-@@ -289,7 +290,7 @@
+ Rectangle pl_boxoutline(Image *b, Rectangle r, int style, int fill){
+@@ -228,7 +229,7 @@
  	draw(b, r, pl_dark, pl_hilit, ZP);
  }
  void pl_clr(Image *b, Rectangle r){
@@ -36,10 +34,10 @@ diff -Naur /sys/src/cmd/mothra/libpanel/draw.c /sys/src/cmd/mothra/libpanel/draw
 +	draw(b, r, pl_white, 0, ZP);
  }
  void pl_fill(Image *b, Rectangle r){
- 	draw(b, r, plldepth==0? pl_white : pl_light, 0, ZP);
-diff -Naur /sys/src/cmd/mothra/libpanel/message.c /sys/src/cmd/mothra/libpanel/message.c
---- /sys/src/cmd/mothra/libpanel/message.c	Sun Apr 26 11:02:37 2020
-+++ /sys/src/cmd/mothra/libpanel/message.c	Sun Apr 26 10:58:41 2020
+ 	draw(b, r, pl_light, 0, ZP);
+diff -r 8006152d13d2 sys/src/cmd/mothra/libpanel/message.c
+--- a/sys/src/cmd/mothra/libpanel/message.c	Tue Apr 28 20:51:19 2020 -0700
++++ b/sys/src/cmd/mothra/libpanel/message.c	Wed Apr 29 10:59:40 2020 +0200
 @@ -29,7 +29,7 @@
  			end=s;
  		c=*end;
@@ -49,21 +47,21 @@ diff -Naur /sys/src/cmd/mothra/libpanel/message.c /sys/src/cmd/mothra/libpanel/m
  		*end=c;
  		where.y+=font->height;
  		s=end;
-diff -Naur /sys/src/cmd/mothra/libpanel/panel.h /sys/src/cmd/mothra/libpanel/panel.h
---- /sys/src/cmd/mothra/libpanel/panel.h	Sun Apr 26 11:02:48 2020
-+++ /sys/src/cmd/mothra/libpanel/panel.h	Sun Apr 26 10:58:53 2020
-@@ -109,7 +109,7 @@
- 
- Panel *plkbfocus;			/* the panel in keyboard focus */
+diff -r 8006152d13d2 sys/src/cmd/mothra/libpanel/pldefs.h
+--- a/sys/src/cmd/mothra/libpanel/pldefs.h	Tue Apr 28 20:51:19 2020 -0700
++++ b/sys/src/cmd/mothra/libpanel/pldefs.h	Wed Apr 29 10:59:40 2020 +0200
+@@ -40,7 +40,7 @@
+ 	SCROLLABSX,
+ };
  
 -extern Image *pl_blue;
 +extern Image *pl_blue, *pl_txt;
  
- int plinit(int);			/* initialization */
- void plpack(Panel *, Rectangle);	/* figure out where to put the Panel & children */
-diff -Naur /sys/src/cmd/mothra/libpanel/rtext.c /sys/src/cmd/mothra/libpanel/rtext.c
---- /sys/src/cmd/mothra/libpanel/rtext.c	Sun Apr 26 11:02:48 2020
-+++ /sys/src/cmd/mothra/libpanel/rtext.c	Sun Apr 26 11:00:23 2020
+ /*
+  * Scrollbar, slider orientations
+diff -r 8006152d13d2 sys/src/cmd/mothra/libpanel/rtext.c
+--- a/sys/src/cmd/mothra/libpanel/rtext.c	Tue Apr 28 20:51:19 2020 -0700
++++ b/sys/src/cmd/mothra/libpanel/rtext.c	Wed Apr 29 10:59:40 2020 +0200
 @@ -195,13 +195,14 @@
  		&& dr.min.x<r.max.x){
  			if(t->b){
@@ -85,7 +83,7 @@ diff -Naur /sys/src/cmd/mothra/libpanel/rtext.c /sys/src/cmd/mothra/libpanel/rte
  				if(t->flags&PL_HOT)
  					string(b, dr.min, pl_blue, ZP, t->font, t->text);
  				else
--					string(b, dr.min,display->black, ZP, t->font, t->text);
+-					string(b, dr.min, display->black, ZP, t->font, t->text);
 +					string(b, dr.min, pl_txt, ZP, t->font, t->text);
  				if(t->flags&PL_SEL)
  					pl_highlight(b, dr);
@@ -111,9 +109,9 @@ diff -Naur /sys/src/cmd/mothra/libpanel/rtext.c /sys/src/cmd/mothra/libpanel/rte
  					lp = ZP;
  				continue;
  			}
-diff -Naur /sys/src/cmd/mothra/libpanel/textwin.c /sys/src/cmd/mothra/libpanel/textwin.c
---- /sys/src/cmd/mothra/libpanel/textwin.c	Sun Apr 26 11:02:48 2020
-+++ /sys/src/cmd/mothra/libpanel/textwin.c	Sun Apr 26 11:00:47 2020
+diff -r 8006152d13d2 sys/src/cmd/mothra/libpanel/textwin.c
+--- a/sys/src/cmd/mothra/libpanel/textwin.c	Tue Apr 28 20:51:19 2020 -0700
++++ b/sys/src/cmd/mothra/libpanel/textwin.c	Wed Apr 29 10:59:40 2020 +0200
 @@ -155,7 +155,7 @@
  		default:
  			buf[runetochar(buf, r)]='\0';
@@ -123,10 +121,18 @@ diff -Naur /sys/src/cmd/mothra/libpanel/textwin.c /sys/src/cmd/mothra/libpanel/t
  			break;
  		}
  		if(lp[1].y!=lp[0].y)
-diff -Naur /sys/src/cmd/mothra/mothra.c /sys/src/cmd/mothra/mothra.c
---- /sys/src/cmd/mothra/mothra.c	Sun Apr 26 11:02:37 2020
-+++ /sys/src/cmd/mothra/mothra.c	Sun Apr 26 11:02:06 2020
-@@ -355,12 +355,10 @@
+diff -r 8006152d13d2 sys/src/cmd/mothra/mothra.c
+--- a/sys/src/cmd/mothra/mothra.c	Tue Apr 28 20:51:19 2020 -0700
++++ b/sys/src/cmd/mothra/mothra.c	Wed Apr 29 10:59:40 2020 +0200
+@@ -12,6 +12,7 @@
+ #include <regexp.h>
+ #include "mothra.h"
+ #include "rtext.h"
++#include "pldefs.h"
+ int debug=0;
+ int verbose=0;		/* -v flag causes html errors to be written to file-descriptor 2 */
+ int killimgs=0;	/* should mothra kill images? */
+@@ -355,12 +356,10 @@
  	hrule=allocimage(display, Rect(0, 0, 1, 5), screen->chan, 1, DWhite);
  	if(hrule==0)
  		sysfatal("can't allocimage!");

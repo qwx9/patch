@@ -1,7 +1,7 @@
-diff -r c392f6b2122c sys/src/cmd/aux/statusmsg.c
---- a/sys/src/cmd/aux/statusmsg.c	Mon Feb 15 17:30:56 2016 +0100
-+++ b/sys/src/cmd/aux/statusmsg.c	Thu Feb 18 06:06:21 2016 +0100
-@@ -19,8 +19,8 @@
+diff -r c055db14ff2b sys/src/cmd/aux/statusmsg.c
+--- a/sys/src/cmd/aux/statusmsg.c	Sun Dec 06 14:50:50 2020 +0100
++++ b/sys/src/cmd/aux/statusmsg.c	Sun Dec 06 15:02:20 2020 +0100
+@@ -20,8 +20,8 @@
  void
  initcolor(void)
  {
@@ -9,6 +9,6 @@ diff -r c392f6b2122c sys/src/cmd/aux/statusmsg.c
 -	light = allocimagemix(display, DPalegreen, DWhite);
 +	text = allocimage(display, Rect(0,0,1,1), CMAP8, 1, 0x440000FF);
 +	light = display->black;
+ 	if(light == nil) sysfatal("initcolor: %r");
  }
  
- void

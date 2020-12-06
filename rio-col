@@ -1,9 +1,7 @@
-rio colors.
-
-diff -r 3cb0cf9ab43a sys/src/cmd/rio/data.c
---- a/sys/src/cmd/rio/data.c	Mon Feb 08 20:07:56 2016 -0500
-+++ b/sys/src/cmd/rio/data.c	Sun Feb 14 06:53:09 2016 +0100
-@@ -175,27 +175,21 @@
+diff -r c055db14ff2b sys/src/cmd/rio/data.c
+--- a/sys/src/cmd/rio/data.c	Sun Dec 06 14:50:50 2020 +0100
++++ b/sys/src/cmd/rio/data.c	Sun Dec 06 15:08:42 2020 +0100
+@@ -175,31 +175,20 @@
  void
  iconinit(void)
  {
@@ -29,6 +27,12 @@ diff -r 3cb0cf9ab43a sys/src/cmd/rio/data.c
 -	paleholdcol = allocimage(display, Rect(0,0,1,1), CMAP8, 1, DPalegreyblue);
 -	paletextcol = allocimage(display, Rect(0,0,1,1), CMAP8, 1, 0x666666FF^reverse);
 -	sizecol = allocimage(display, Rect(0,0,1,1), CMAP8, 1, DRed);
+-	badsizecol = allocimage(display, Rect(0,0,1,1), CMAP8, 1, 0x880000FF);
+-
+-	if(reverse == 0)
+-		holdcol = dholdcol;
+-	else
+-		holdcol = paleholdcol;
 +	cols[BACK] = allocimage(display, Rect(0,0,1,1), CMAP8, 1, DBlack);
 +	cols[BORD] = allocimage(display, Rect(0,0,1,1), CMAP8, 1, 0x111111FF);
 +	cols[TEXT] = allocimage(display, Rect(0,0,1,1), CMAP8, 1, 0x884400FF);
@@ -41,6 +45,5 @@ diff -r 3cb0cf9ab43a sys/src/cmd/rio/data.c
 +	paleholdcol = allocimage(display, Rect(0,0,1,1), CMAP8, 1, 0x333333FF);
 +	paletextcol = allocimage(display, Rect(0,0,1,1), CMAP8, 1, 0x550000FF);
 +	sizecol = allocimage(display, Rect(0,0,1,1), CMAP8, 1, 0x550000FF);
- 
- 	if(reverse == 0)
- 		holdcol = dholdcol;
++	badsizecol = allocimage(display, Rect(0,0,1,1), CMAP8, 1, 0xAA0000FF);
+ }

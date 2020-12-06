@@ -1,6 +1,6 @@
-diff -r b048db97b5ea sys/src/cmd/aux/statusbar.c
---- a/sys/src/cmd/aux/statusbar.c	Fri Jan 04 02:51:29 2019 +0100
-+++ b/sys/src/cmd/aux/statusbar.c	Mon Jan 07 13:56:09 2019 +0100
+diff -r c055db14ff2b sys/src/cmd/aux/statusbar.c
+--- a/sys/src/cmd/aux/statusbar.c	Sun Dec 06 14:50:50 2020 +0100
++++ b/sys/src/cmd/aux/statusbar.c	Sun Dec 06 15:02:12 2020 +0100
 @@ -18,9 +18,9 @@
  void
  initcolor(void)
@@ -11,6 +11,6 @@ diff -r b048db97b5ea sys/src/cmd/aux/statusbar.c
 +	text = allocimage(display, Rect(0,0,1,1), CMAP8, 1, 0x440000FF);
 +	light = display->black;
 +	dark = text;
+ 	if(light == nil || dark == nil) sysfatal("initcolor: %r");
  }
  
- Rectangle rbar;

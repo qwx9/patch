@@ -1,7 +1,7 @@
-diff -r d6c26034ff13 rc/bin/play
---- a/rc/bin/play	Sun Jan 12 00:19:39 2020 +0100
-+++ b/rc/bin/play	Sun Jan 12 17:30:21 2020 +0100
-@@ -46,8 +46,10 @@
+diff -r cad89138e0ac rc/bin/play
+--- a/rc/bin/play	Wed Dec 23 13:10:30 2020 +0100
++++ b/rc/bin/play	Sat Dec 26 02:38:14 2020 +0100
+@@ -46,8 +46,12 @@
  					}
  				}
  			}
@@ -10,15 +10,19 @@ diff -r d6c26034ff13 rc/bin/play
  			audio/oggdec
 +		case *ogg*opus*
 +			audio/opusdec
++		case *audio/mpeg* *aac*
++			audio/aacdec
  		case *mp3* *mpeg*
  			audio/mp3dec
  		case *wave*
-@@ -68,6 +70,8 @@
+@@ -68,6 +72,10 @@
  				audio/mp3dec
  			case *.ogg *.OGG
  				audio/oggdec
 +			case *.opus *.OPUS
 +				audio/opusdec
++			case *.aac *.AAC *.m4a *.M4A
++				audio/aacdec
  			case *.wav *.WAV
  				audio/wavdec
  			case *.flac *.FLAC

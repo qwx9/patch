@@ -10,7 +10,7 @@ diff -r cad89138e0ac rc/bin/play
  			audio/oggdec
 +		case *ogg*opus*
 +			audio/opusdec
-+		case *audio/mpeg* *aac*
++		case *aac*
 +			audio/aacdec
  		case *mp3* *mpeg*
  			audio/mp3dec

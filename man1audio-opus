@@ -1,8 +1,8 @@
-diff -r 856b7143c3eb sys/man/1/audio
---- a/sys/man/1/audio	Sun Jan 12 03:40:42 2020 +0000
-+++ b/sys/man/1/audio	Mon Jan 13 09:20:48 2020 +0100
-@@ -14,6 +14,13 @@
- .B audio/wavdec
+diff -r b14fe5260932 sys/man/1/audio
+--- a/sys/man/1/audio	Mon Jan 11 16:58:04 2021 +0100
++++ b/sys/man/1/audio	Tue Jan 12 00:22:23 2021 +0100
+@@ -29,6 +29,13 @@
+ ]
  .br
  .B audio/sundec
 +.br
@@ -15,9 +15,9 @@ diff -r 856b7143c3eb sys/man/1/audio
  .PP
  .B audio/oggenc
  .br
-@@ -40,6 +47,13 @@
- ] [
- .I "long or silly options"
+@@ -76,6 +83,13 @@
+ .B -T
+ .I field=value
  ]
 +.br
 +.B audio/opusenc
@@ -29,41 +29,36 @@ diff -r 856b7143c3eb sys/man/1/audio
  .PP
  .B audio/pcmconv
  [
-@@ -86,10 +100,11 @@
+@@ -128,11 +142,12 @@
  The encoders read PCM on standard input and produce compressed audio
  on standard output.
  .PP
--.I Oggenc
-+.IR Oggenc ,
-+.I mp3enc
+-.I Flacenc,
+-.I oggenc
++.IR Flacenc ,
++.IR oggenc ,
++.IR opusenc ,
  and
--.I mp3enc
--produce OGG Vorbis and MP3 audio. For
-+.I opusenc
-+produce OGG Vorbis, MP3, and OGG Opus audio. For
+ .I mp3enc
+-produce FLAC, OGG Vorbis and MP3 audio. For
++produce FLAC, OGG Vorbis, OGG Opus and MP3 audio. For
  .I mp3enc,
  the MP3 file will use `constant bit-rate' (CBR) encoding by default, 
  but that can be changed via
-@@ -98,12 +113,16 @@
+@@ -141,8 +156,11 @@
  or
  .BR -v
  (variable bitrate, VBR).
 +.I Opusenc
 +uses VBR by default.
  .PP
- .I Oggenc
--accepts raw PCM in the same byte order as
-+and
+-.I Flacenc
++.IR Flacenc ,
 +.I opusenc
-+accept raw PCM in the same byte order as
- .B /dev/audio
- (little-endian),
--t
-+but
- .I mp3enc -r
- expects big-endian.
- .SS Options
-@@ -230,6 +249,20 @@
+ and
+ .I oggenc
+ accept raw PCM in the same byte order as
+@@ -275,6 +293,20 @@
  .B --voice
  experimental voice mode
  .SS
@@ -84,7 +79,7 @@ diff -r 856b7143c3eb sys/man/1/audio
  .I Pcmconv
  is a helper program used to convert various PCM sample formats. The
  .B -i
-@@ -342,6 +375,12 @@
+@@ -387,6 +419,12 @@
  .EX
  dd -conv swab | audio/mp3enc -a -r -m m --resample 16 -b 24
  .EE

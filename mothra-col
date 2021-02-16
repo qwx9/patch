@@ -1,33 +1,39 @@
-diff -r 8006152d13d2 sys/src/cmd/mothra/libpanel/draw.c
---- a/sys/src/cmd/mothra/libpanel/draw.c	Tue Apr 28 20:51:19 2020 -0700
-+++ b/sys/src/cmd/mothra/libpanel/draw.c	Wed Apr 29 10:59:40 2020 +0200
-@@ -14,15 +14,16 @@
+diff -r 8b4cfdf43705 sys/src/cmd/mothra/libpanel/draw.c
+--- a/sys/src/cmd/mothra/libpanel/draw.c	Tue Feb 16 22:04:50 2021 +0100
++++ b/sys/src/cmd/mothra/libpanel/draw.c	Tue Feb 16 22:52:10 2021 +0100
+@@ -14,21 +14,22 @@
  #define	CKINSET	1	/* space around check mark frame */
  #define	CKBORDER 2	/* space around X inside frame */
- static Image *pl_white, *pl_light, *pl_dark, *pl_black, *pl_hilit;
--Image *pl_blue;
-+Image *pl_blue, *pl_txt;
+ static Image *pl_light, *pl_dark, *pl_tick, *pl_hilit;
+-Image *pl_blue, *pl_white, *pl_black;
++Image *pl_blue, *pl_white, *pl_black, *pl_txt;
  int pl_drawinit(void){
 -	pl_white=allocimage(display, Rect(0,0,1,1), screen->chan, 1, 0xFFFFFFFF);
 -	pl_light=allocimage(display, Rect(0,0,1,1), screen->chan, 1, 0xFFFFFFFF);
 -	pl_dark=allocimage(display, Rect(0,0,1,1), screen->chan, 1, 0x777777FF);
 -	pl_black=allocimage(display, Rect(0,0,1,1), screen->chan, 1, 0x000000FF);
--	pl_hilit=allocimage(display, Rect(0,0,1,1), CHAN1(CAlpha,8), 1, 0x80);
--	pl_blue=allocimage(display, Rect(0,0,1,1), RGB24, 1, 0x0000FFFF);
--	if(pl_white==0 || pl_light==0 || pl_black==0 || pl_dark==0 || pl_blue==0) sysfatal("allocimage: %r");
 +	pl_white=display->black;
 +	pl_light=display->black;
 +	pl_dark=allocimage(display, Rect(0,0,1,1), CMAP8, 1, 0x222222FF);
 +	pl_black=allocimage(display, Rect(0,0,1,1), CMAP8, 1, 0x770000FF);
-+ 	pl_hilit=allocimage(display, Rect(0,0,1,1), CHAN1(CAlpha,8), 1, 0x80);
+ 	pl_hilit=allocimage(display, Rect(0,0,1,1), CHAN1(CAlpha,8), 1, 0x80);
+-	pl_blue=allocimage(display, Rect(0,0,1,1), RGB24, 1, 0x0000FFFF);
+-	if((pl_tick = allocimage(display, Rect(0, 0, TICKW, font->height), screen->chan, 0, DNofill)) != nil){
 +	pl_blue=allocimage(display, Rect(0,0,1,1), CMAP8, 1, 0x666666FF);
 +	pl_txt=allocimage(display, Rect(0,0,1,1), CMAP8, 1, 0x884400FF);
-+	if(pl_white==0 || pl_light==0 || pl_black==0 || pl_dark==0 || pl_blue==0 || pl_txt==0) sysfatal("allocimage: %r");
++	if((pl_tick = allocimage(display, Rect(0, 0, TICKW, font->height), screen->chan, 0x00ff00, DNofill)) != nil){
+ 		draw(pl_tick, pl_tick->r, pl_white, nil, ZP);
+ 		draw(pl_tick, Rect(TICKW/2, 0, TICKW/2+1, font->height), pl_black, nil, ZP);
+ 		draw(pl_tick, Rect(0, 0, TICKW, TICKW), pl_black, nil, ZP);
+ 		draw(pl_tick, Rect(0, font->height-TICKW, TICKW, font->height), pl_black, nil, ZP);
+ 	}
+-	if(pl_white==0 || pl_light==0 || pl_black==0 || pl_dark==0 || pl_blue==0 || pl_tick==0) sysfatal("allocimage: %r");
++	if(pl_white==0 || pl_light==0 || pl_black==0 || pl_dark==0 || pl_blue==0 || pl_tick==0 || pl_txt==0) sysfatal("allocimage: %r");
  	return 1;
  }
  Rectangle pl_boxoutline(Image *b, Rectangle r, int style, int fill){
-@@ -228,7 +229,7 @@
- 	draw(b, r, pl_dark, pl_hilit, ZP);
+@@ -237,7 +238,7 @@
+ 	draw(b, r, pl_tick, nil, ZP);
  }
  void pl_clr(Image *b, Rectangle r){
 -	draw(b, r, display->white, 0, ZP);
@@ -35,9 +41,9 @@ diff -r 8006152d13d2 sys/src/cmd/mothra/libpanel/draw.c
  }
  void pl_fill(Image *b, Rectangle r){
  	draw(b, r, pl_light, 0, ZP);
-diff -r 8006152d13d2 sys/src/cmd/mothra/libpanel/message.c
---- a/sys/src/cmd/mothra/libpanel/message.c	Tue Apr 28 20:51:19 2020 -0700
-+++ b/sys/src/cmd/mothra/libpanel/message.c	Wed Apr 29 10:59:40 2020 +0200
+diff -r 8b4cfdf43705 sys/src/cmd/mothra/libpanel/message.c
+--- a/sys/src/cmd/mothra/libpanel/message.c	Tue Feb 16 22:04:50 2021 +0100
++++ b/sys/src/cmd/mothra/libpanel/message.c	Tue Feb 16 22:52:10 2021 +0100
 @@ -29,7 +29,7 @@
  			end=s;
  		c=*end;
@@ -47,26 +53,27 @@ diff -r 8006152d13d2 sys/src/cmd/mothra/libpanel/message.c
  		*end=c;
  		where.y+=font->height;
  		s=end;
-diff -r 8006152d13d2 sys/src/cmd/mothra/libpanel/pldefs.h
---- a/sys/src/cmd/mothra/libpanel/pldefs.h	Tue Apr 28 20:51:19 2020 -0700
-+++ b/sys/src/cmd/mothra/libpanel/pldefs.h	Wed Apr 29 10:59:40 2020 +0200
-@@ -40,7 +40,7 @@
+diff -r 8b4cfdf43705 sys/src/cmd/mothra/libpanel/pldefs.h
+--- a/sys/src/cmd/mothra/libpanel/pldefs.h	Tue Feb 16 22:04:50 2021 +0100
++++ b/sys/src/cmd/mothra/libpanel/pldefs.h	Tue Feb 16 22:52:10 2021 +0100
+@@ -41,7 +41,7 @@
  	SCROLLABSX,
  };
  
--extern Image *pl_blue;
-+extern Image *pl_blue, *pl_txt;
+-extern Image *pl_blue, *pl_white, *pl_black;
++extern Image *pl_blue, *pl_white, *pl_black, *pl_txt;
  
  /*
   * Scrollbar, slider orientations
-diff -r 8006152d13d2 sys/src/cmd/mothra/libpanel/rtext.c
---- a/sys/src/cmd/mothra/libpanel/rtext.c	Tue Apr 28 20:51:19 2020 -0700
-+++ b/sys/src/cmd/mothra/libpanel/rtext.c	Wed Apr 29 10:59:40 2020 +0200
-@@ -195,13 +195,14 @@
+diff -r 8b4cfdf43705 sys/src/cmd/mothra/libpanel/rtext.c
+--- a/sys/src/cmd/mothra/libpanel/rtext.c	Tue Feb 16 22:04:50 2021 +0100
++++ b/sys/src/cmd/mothra/libpanel/rtext.c	Tue Feb 16 22:52:10 2021 +0100
+@@ -194,14 +194,15 @@
+ 		&& dr.max.x>r.min.x
  		&& dr.min.x<r.max.x){
  			if(t->b){
- 				draw(b, insetrect(dr, BORD), t->b, 0, t->b->r.min);
 +				if(t->flags&PL_HOT) border(b, dr, 1, pl_blue, ZP);
+ 				draw(b, insetrect(dr, BORD), t->b, 0, t->b->r.min);
  				if(t->flags&PL_STR) {
  					line(b, Pt(dr.min.x, dr.min.y), Pt(dr.max.x, dr.max.y),
  						Endsquare, Endsquare, 0,
@@ -109,9 +116,9 @@ diff -r 8006152d13d2 sys/src/cmd/mothra/libpanel/rtext.c
  					lp = ZP;
  				continue;
  			}
-diff -r 8006152d13d2 sys/src/cmd/mothra/libpanel/textwin.c
---- a/sys/src/cmd/mothra/libpanel/textwin.c	Tue Apr 28 20:51:19 2020 -0700
-+++ b/sys/src/cmd/mothra/libpanel/textwin.c	Wed Apr 29 10:59:40 2020 +0200
+diff -r 8b4cfdf43705 sys/src/cmd/mothra/libpanel/textwin.c
+--- a/sys/src/cmd/mothra/libpanel/textwin.c	Tue Feb 16 22:04:50 2021 +0100
++++ b/sys/src/cmd/mothra/libpanel/textwin.c	Tue Feb 16 22:52:10 2021 +0100
 @@ -155,7 +155,7 @@
  		default:
  			buf[runetochar(buf, r)]='\0';
@@ -121,9 +128,9 @@ diff -r 8006152d13d2 sys/src/cmd/mothra/libpanel/textwin.c
  			break;
  		}
  		if(lp[1].y!=lp[0].y)
-diff -r 8006152d13d2 sys/src/cmd/mothra/mothra.c
---- a/sys/src/cmd/mothra/mothra.c	Tue Apr 28 20:51:19 2020 -0700
-+++ b/sys/src/cmd/mothra/mothra.c	Wed Apr 29 10:59:40 2020 +0200
+diff -r 8b4cfdf43705 sys/src/cmd/mothra/mothra.c
+--- a/sys/src/cmd/mothra/mothra.c	Tue Feb 16 22:04:50 2021 +0100
++++ b/sys/src/cmd/mothra/mothra.c	Tue Feb 16 22:52:10 2021 +0100
 @@ -12,6 +12,7 @@
  #include <regexp.h>
  #include "mothra.h"

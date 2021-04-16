@@ -1,7 +1,7 @@
-diff -r 49bd5e4c9bde sys/src/cmd/acme/acme.c
---- a/sys/src/cmd/acme/acme.c	Wed Feb 07 18:53:08 2018 +0000
-+++ b/sys/src/cmd/acme/acme.c	Sun Feb 18 20:30:34 2018 +0100
-@@ -863,18 +863,18 @@
+diff -r eafb71d27315 sys/src/cmd/acme/acme.c
+--- a/sys/src/cmd/acme/acme.c	Wed Apr 14 20:30:24 2021 -0700
++++ b/sys/src/cmd/acme/acme.c	Fri Apr 16 07:16:49 2021 +0200
+@@ -876,18 +876,18 @@
  	Image *tmp;
  
  	/* Blue */
@@ -30,7 +30,7 @@ diff -r 49bd5e4c9bde sys/src/cmd/acme/acme.c
  
  	if(button){
  		freeimage(button);
-@@ -894,12 +894,12 @@
+@@ -907,12 +907,12 @@
  	r.max.x -= 2;
  	border(modbutton, r, 2, tagcols[BORD], ZP);
  	r = insetrect(r, 2);
@@ -45,9 +45,9 @@ diff -r 49bd5e4c9bde sys/src/cmd/acme/acme.c
  
  	but2col = allocimage(display, r, screen->chan, 1, 0xAA0000FF);
  	but3col = allocimage(display, r, screen->chan, 1, 0x006600FF);
-diff -r 49bd5e4c9bde sys/src/cmd/acme/cols.c
---- a/sys/src/cmd/acme/cols.c	Wed Feb 07 18:53:08 2018 +0000
-+++ b/sys/src/cmd/acme/cols.c	Sun Feb 18 20:30:34 2018 +0100
+diff -r eafb71d27315 sys/src/cmd/acme/cols.c
+--- a/sys/src/cmd/acme/cols.c	Wed Apr 14 20:30:24 2021 -0700
++++ b/sys/src/cmd/acme/cols.c	Fri Apr 16 07:16:49 2021 +0200
 @@ -17,7 +17,7 @@
  	Rectangle r1;
  	Text *t;
@@ -75,26 +75,26 @@ diff -r 49bd5e4c9bde sys/src/cmd/acme/cols.c
  		r.min.y = r1.max.y;
  	}
  	if(w == nil){
-@@ -134,7 +134,7 @@
- 	c->nw--;
+@@ -135,7 +135,7 @@
+ 	memmove(c->w+i, c->w+i+1, (c->nw-i)*sizeof(Window*));
  	c->w = realloc(c->w, c->nw*sizeof(Window*));
  	if(c->nw == 0){
 -		draw(screen, r, display->white, nil, ZP);
 +		draw(screen, r, display->black, nil, ZP);
  		return;
  	}
- 	if(i == c->nw){		/* extend last window down */
-@@ -189,7 +189,7 @@
+ 	up = 0;
+@@ -197,7 +197,7 @@
  	draw(screen, c->tag.scrollr, colbutton, nil, colbutton->r.min);
  	r1.min.y = r1.max.y;
  	r1.max.y += Border;
 -	draw(screen, r1, display->black, nil, ZP);
 +	draw(screen, r1, tagcols[BORD], nil, ZP);
  	r1.max.y = r.max.y;
- 	for(i=0; i<c->nw; i++){
- 		w = c->w[i];
-@@ -200,7 +200,7 @@
- 			r1.max.y = r1.min.y+(Dy(w->r)+Border)*Dy(r)/Dy(c->r);
+ 	new = Dy(r) - c->nw*(Border + font->height);
+ 	old = Dy(c->r) - c->nw*(Border + font->height);
+@@ -213,7 +213,7 @@
+ 		}
  		r2 = r1;
  		r2.max.y = r2.min.y+Border;
 -		draw(screen, r2, display->black, nil, ZP);
@@ -102,7 +102,7 @@ diff -r 49bd5e4c9bde sys/src/cmd/acme/cols.c
  		r1.min.y = r2.max.y;
  		r1.min.y = winresize(w, r1, FALSE);
  	}
-@@ -256,7 +256,7 @@
+@@ -269,7 +269,7 @@
  			r.max.y = r.min.y+Dy(w->r)+Border;
  		r1 = r;
  		r1.max.y = r1.min.y+Border;
@@ -111,7 +111,7 @@ diff -r 49bd5e4c9bde sys/src/cmd/acme/cols.c
  		r.min.y = r1.max.y;
  		y = winresize(w, r, FALSE);
  	}
-@@ -358,7 +358,7 @@
+@@ -371,7 +371,7 @@
  		}
  		r.min.y = v->r.max.y;
  		r.max.y += Border;
@@ -120,7 +120,7 @@ diff -r 49bd5e4c9bde sys/src/cmd/acme/cols.c
  		y1 = r.max.y;
  	}
  	/* scan to see new size of everyone below */
-@@ -390,7 +390,7 @@
+@@ -403,7 +403,7 @@
  	if(i < c->nw-1){
  		r.min.y = r.max.y;
  		r.max.y += Border;
@@ -129,16 +129,16 @@ diff -r 49bd5e4c9bde sys/src/cmd/acme/cols.c
  		for(j=i+1; j<c->nw; j++)
  			ny[j] -= (y2-r.max.y);
  	}
-@@ -410,7 +410,7 @@
+@@ -423,7 +423,7 @@
  		if(j < c->nw-1){	/* no border on last window */
  			r.min.y = v->r.max.y;
- 			r.max.y += Border;
+ 			r.max.y = r.min.y + Border;
 -			draw(screen, r, display->black, nil, ZP);
 +			draw(screen, r, tagcols[BORD], nil, ZP);
  		}
  		y1 = r.max.y;
  	}
-@@ -498,7 +498,7 @@
+@@ -511,7 +511,7 @@
  	}
  	r.min.y = v->r.max.y;
  	r.max.y = r.min.y+Border;
@@ -147,9 +147,9 @@ diff -r 49bd5e4c9bde sys/src/cmd/acme/cols.c
  	r.min.y = r.max.y;
  	if(i == c->nw-1)
  		r.max.y = c->r.max.y;
-diff -r 49bd5e4c9bde sys/src/cmd/acme/rows.c
---- a/sys/src/cmd/acme/rows.c	Wed Feb 07 18:53:08 2018 +0000
-+++ b/sys/src/cmd/acme/rows.c	Sun Feb 18 20:30:34 2018 +0100
+diff -r eafb71d27315 sys/src/cmd/acme/rows.c
+--- a/sys/src/cmd/acme/rows.c	Wed Apr 14 20:30:24 2021 -0700
++++ b/sys/src/cmd/acme/rows.c	Fri Apr 16 07:16:49 2021 +0200
 @@ -18,7 +18,7 @@
  	Rectangle r1;
  	Text *t;
@@ -239,7 +239,7 @@ diff -r 49bd5e4c9bde sys/src/cmd/acme/rows.c
  	colresize(c, r);
  }
  
-@@ -543,12 +543,12 @@
+@@ -550,12 +550,12 @@
  			r2.min.x = x+Border;
  			if(Dx(r1) < 50 || Dx(r2) < 50)
  				continue;
@@ -254,10 +254,10 @@ diff -r 49bd5e4c9bde sys/src/cmd/acme/rows.c
  		}
  		if(i >= row->ncol)
  			rowadd(row, nil, x);
-diff -r 49bd5e4c9bde sys/src/cmd/acme/text.c
---- a/sys/src/cmd/acme/text.c	Wed Feb 07 18:53:08 2018 +0000
-+++ b/sys/src/cmd/acme/text.c	Sun Feb 18 20:30:34 2018 +0100
-@@ -1141,12 +1141,12 @@
+diff -r eafb71d27315 sys/src/cmd/acme/text.c
+--- a/sys/src/cmd/acme/text.c	Wed Apr 14 20:30:24 2021 -0700
++++ b/sys/src/cmd/acme/text.c	Fri Apr 16 07:16:49 2021 +0200
+@@ -1190,12 +1190,12 @@
  				pt1 = pt0;
  				reg = region(q, p0);
  				if(reg == 0)
@@ -272,7 +272,7 @@ diff -r 49bd5e4c9bde sys/src/cmd/acme/text.c
  
  				else if(q < p1)
  					selrestore(f, qt, q, p1);
-@@ -1154,7 +1154,7 @@
+@@ -1203,7 +1203,7 @@
  				if(q > p1)
  					selrestore(f, pt1, p1, q);
  				else

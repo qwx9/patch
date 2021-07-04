@@ -1,11 +1,10 @@
-diff -r 1221b9519cb7 sys/src/cmd/rio/data.c
---- a/sys/src/cmd/rio/data.c	Sun Dec 06 22:06:32 2020 +0100
-+++ b/sys/src/cmd/rio/data.c	Sun Dec 06 23:58:46 2020 +0100
+--- a/sys/src/cmd/rio/data.c
++++ b/sys/src/cmd/rio/data.c
 @@ -175,30 +175,20 @@
  void
  iconinit(void)
  {
--	background = allocimage(display, Rect(0,0,1,1), RGB24, 1, 0x777777FF);
+-	background = allocimage(display, Rect(0,0,1,1), screen->chan, 1, 0x777777FF);
 +	background = display->black;
  
  	/* greys are multiples of 0x11111100+0xFF, 14* being palest */

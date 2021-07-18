@@ -1,7 +1,6 @@
-diff -r 70f20d62c396 sys/src/cmd/aux/kbdfs/kbdfs.c
---- a/sys/src/cmd/aux/kbdfs/kbdfs.c	Wed Jan 08 02:35:01 2020 +0000
-+++ b/sys/src/cmd/aux/kbdfs/kbdfs.c	Wed Jan 08 06:23:13 2020 +0100
-@@ -306,6 +306,24 @@
+--- //.git/fs/object/90ce513fb0df41c0d6c5cea8dbd612c1859d4392/tree/sys/src/cmd/aux/kbdfs/kbdfs.c
++++ sys/src/cmd/aux/kbdfs/kbdfs.c
+@@ -348,6 +348,24 @@
  }
  
  void
@@ -26,12 +25,12 @@ diff -r 70f20d62c396 sys/src/cmd/aux/kbdfs/kbdfs.c
  reboot(void)
  {
  	int fd;
-@@ -387,6 +405,8 @@
+@@ -440,6 +458,8 @@
  	if(scan->caps && key.r<='z' && key.r>='a')
  		key.r += 'A' - 'a';
  
 +	if(scan->ctl && scan->altgr && key.r == Kdel)
 +		emergencywarp();
- 	if(scan->ctl && scan->alt && key.r == Kdel)
- 		reboot();
- 
+ 	if(scan->ctl && scan->alt && key.r == Kdel){
+ 		if(scan->shift)
+ 			shiftup();

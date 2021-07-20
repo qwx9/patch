@@ -1,0 +1,11 @@
+--- //.git/fs/object/90ce513fb0df41c0d6c5cea8dbd612c1859d4392/tree/sys/src/games/doom/g_game.c
++++ sys/src/games/doom/g_game.c
+@@ -399,7 +399,7 @@
+ 	} 
+     } 
+  
+-    forward += mousey; 
++    //forward += mousey; 
+     if (strafe) 
+ 	side += mousex*2; 
+     else 

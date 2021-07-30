@@ -1,0 +1,99 @@
+--- //.git/fs/object/84b77568cda98a21dd4f3403a94c56724fbd5b37/tree/sys/src/cmd/sam/mesg.c
++++ sys/src/cmd/sam/mesg.c
+@@ -350,6 +350,12 @@
+ 		f = whichfile(inshort());
+ 		p0 = inlong();
+ 		journaln(0, p0);
++		int fd = open("/dev/snarf", OREAD);
++		if(fd < 0)
++			panic("paste: open");
++		bufreset(&snarfbuf);
++		bufload(&snarfbuf, 0, fd, &i);
++		close(fd);
+ 		for(l=0; l<snarfbuf.nc; l+=m){
+ 			m = snarfbuf.nc-l;
+ 			if(m>BLOCKSIZE)
+@@ -578,7 +584,9 @@
+ snarf(File *f, Posn p1, Posn p2, Buffer *buf, int emptyok)
+ {
+ 	Posn l;
+-	int i;
++	int i, fd, n;
++	String *s;
++	char *cs;
+ 
+ 	if(!emptyok && p1==p2)
+ 		return;
+@@ -588,11 +596,23 @@
+ 		fprint(2, "bad snarf addr p1=%ld p2=%ld f->nc=%d\n", p1, p2, f->nc); /*ZZZ should never happen, can remove */
+ 		p2 = f->nc;
+ 	}
++	fd = open("/dev/snarf", OWRITE);
++	if(fd < 0){
++		fprint(2, "snarf: %r\n");
++		return;
++	}
+ 	for(l=p1; l<p2; l+=i){
+ 		i = p2-l>BLOCKSIZE? BLOCKSIZE : p2-l;
+ 		bufread(f, l, genbuf, i);
+-		bufinsert(buf, buf->nc, tmprstr(genbuf, i)->s, i);
++		s = tmprstr(genbuf, i);
++		cs = Strtoc(s);
++		n = strlen(cs);
++		if(write(fd, cs, n) != n)
++			fprint(2, "snarf: %r\n");
++		free(cs);
++		bufinsert(buf, buf->nc, s->s, i);
+ 	}
++	close(fd);
+ }
+ 
+ int
+--- //.git/fs/object/84b77568cda98a21dd4f3403a94c56724fbd5b37/tree/sys/src/cmd/samterm/main.c
++++ sys/src/cmd/samterm/main.c
+@@ -303,11 +303,9 @@
+ void
+ paste(Text *t, int w)
+ {
+-	if(snarflen){
+-		cut(t, w, 0, 0);
+-		t->lock++;
+-		outTsl(Tpaste, t->tag, t->l[w].p0);
+-	}
++	cut(t, w, 0, 0);
++	t->lock++;
++	outTsl(Tpaste, t->tag, t->l[w].p0);
+ }
+ 
+ void
+--- //.git/fs/object/84b77568cda98a21dd4f3403a94c56724fbd5b37/tree/sys/src/cmd/samterm/menu.c
++++ sys/src/cmd/samterm/menu.c
+@@ -27,7 +27,6 @@
+ 	Snarf,
+ 	Plumb,
+ 	Look,
+-	Exch,
+ 	Search,
+ 	NMENU2 = Search,
+ 	Send = Search,
+@@ -50,7 +49,6 @@
+ 	"snarf",
+ 	"plumb",
+ 	"look",
+-	"<rio>",
+ 	0,		/* storage for last pattern */
+ };
+ 
+@@ -95,12 +93,6 @@
+ 	case Plumb:
+ 		if(hversion > 0)
+ 			outTsll(Tplumb, t->tag, which->p0, which->p1);
+-		break;
+-
+-	case Exch:
+-		snarf(t, w);
+-		outT0(Tstartsnarf);
+-		setlock();
+ 		break;
+ 
+ 	case Look:

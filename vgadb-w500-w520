@@ -1,0 +1,60 @@
+diff 6c9462710539bd35ae5c51de27e7894522683bd7 uncommitted
+--- a//lib/vgadb
++++ b//lib/vgadb
+@@ -1873,3 +1873,56 @@
+ 	vrs=617 vre=622 vt=638
+ 	hsync=? vsync=?
+ 	lcd=1
++
++#
++# Acer Aspire V5-573G
++#
++v573g=1920x1080
++	display=3
++	clock=152.84
++	shb=2000 ehb=2054 ht=2250
++	vrs=1086 vre=1094 vt=1132
++	hsync=+ vsync=- 
++	#defaultclock=141.4
++	#shb=1968 ehb=2068 ht=2112
++	#vrs=1088 vre=1102 vt=1112
++	#hsync=- vsync=-
++
++2715qt=3840x2160		# 30.00Hz, 67.50KHz
++	display=6
++	defaultclock=297
++	shb=4016 ehb=4104 ht=4400
++	vrs=2168 vre=2178 vt=2250
++	hsync=+ vsync=+
++2715qt=1920x1200		# 59.95Hz, 74.04KHz
++	display=6
++	defaultclock=154
++	shb=1968 ehb=2000 ht=2080
++	vrs=1203 vre=1209 vt=1235
++	hsync=+ vsync=-
++2715qt=1920x1080		# 60.00Hz, 67.50KHz
++	display=6
++	defaultclock=148
++	shb=2008 ehb=2052 ht=2200
++	vrs=1084 vre=1089 vt=1125
++	hsync=+ vsync=+
++2715qt=1600x1200		# 60.00Hz, 75.00KHz
++	display=6
++	defaultclock=162
++	shb=1664 ehb=1856 ht=2160
++	vrs=1201 vre=1204 vt=1250
++	hsync=+ vsync=+
++
++w520=1920x1080
++	lcd=1
++	clock=139
++	shb=1980 ehb=2028 ht=2050
++	vrs=1090 vre=1100 vt=1130
++	hsync=- vsync=- 
++
++w500=1920x1200	# 60 Hz
++	lcd=1
++	clock=150.79
++	shb=1950 ehb=2030 ht=2060
++	vrs=1202 vre=1206 vt=1220
++	hsync=- vsync=- 

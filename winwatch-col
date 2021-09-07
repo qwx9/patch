@@ -1,0 +1,66 @@
+diff 87a823332f9eaa4ff1e72f8524f6e59d1cc4f407 uncommitted
+--- a/sys/src/cmd/winwatch.c
++++ b/sys/src/cmd/winwatch.c
+@@ -26,8 +26,7 @@
+ int mwin;
+ int onwin;
+ int rows, cols;
+-Image *lightblue;
+-Image *statecol[4];
++Image *bgcol, *txtcol, *statecol[4];
+ 
+ enum {
+ 	PAD = 3,
+@@ -168,7 +167,7 @@
+ 	r = Rect(0,0,(Dx(screen->r)-2*MARGIN+PAD)/cols-PAD, font->height);
+ 	r = rectaddpt(rectaddpt(r, Pt(MARGIN+(PAD+Dx(r))*(i/rows),
+ 				MARGIN+(PAD+Dy(r))*(i%rows))), screen->r.min);
+-	draw(screen, insetrect(r, -1), lightblue, nil, ZP);
++	draw(screen, insetrect(r, -1), bgcol, nil, ZP);
+ }
+ 
+ void
+@@ -175,10 +174,10 @@
+ drawwin(int i)
+ {
+ 	draw(screen, win[i].r, statecol[win[i].state], nil, ZP);
+-	_string(screen, addpt(win[i].r.min, Pt(2,0)), display->black, ZP,
++	_string(screen, addpt(win[i].r.min, Pt(2,0)), txtcol, ZP,
+ 		font, win[i].label, nil, strlen(win[i].label), 
+ 		win[i].r, nil, ZP, SoverD);
+-	border(screen, win[i].r, 1, display->black, ZP);	
++	border(screen, win[i].r, 1, txtcol, ZP);	
+ 	win[i].dirty = 0;
+ }
+ 
+@@ -217,7 +216,7 @@
+ 
+ 	all |= geometry();
+ 	if(all)
+-		draw(screen, screen->r, lightblue, nil, ZP);
++		draw(screen, screen->r, bgcol, nil, ZP);
+ 	for(i=0; i<nwin; i++)
+ 		if(all || win[i].dirty)
+ 			drawwin(i);
+@@ -339,13 +338,14 @@
+ 
+ 	if(initdraw(0, fontname, "winwatch") < 0)
+ 		sysfatal("initdraw: %r");
+-	lightblue = allocimagemix(display, DPalebluegreen, DWhite);
+-
+-	statecol[0] = allocimage(display, Rect(0,0,1,1), screen->chan, 1, 0xCCCCCCFF);
+-	statecol[1] = lightblue;
+-	statecol[2] = lightblue;
+-	statecol[3] = allocimage(display, Rect(0,0,1,1), screen->chan, 1, DPalegreygreen);
+-
++	bgcol = display->black;
++	txtcol = allocimage(display, Rect(0,0,1,1), screen->chan, 1, 0x884400FF);
++	statecol[0] = allocimage(display, Rect(0,0,1,1), screen->chan, 1, 0x111111FF);
++	statecol[1] = display->black;
++	statecol[2] = allocimage(display, Rect(0,0,1,1), screen->chan, 1, 0x440000FF);
++	statecol[3] = statecol[2];
++	if(bgcol == nil || txtcol == nil)
++		sysfatal("allocimage: %r");
+ 	for(i=0; i<nelem(statecol); i++)
+ 		if(statecol[i] == nil)
+ 			sysfatal("allocimage: %r");

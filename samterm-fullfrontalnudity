@@ -111,53 +111,9 @@ diff -Naur a/sys/src/cmd/samterm/main.c b/sys/src/cmd/samterm/main.c
  }
  
  void
-@@ -298,11 +332,9 @@
- void
- paste(Text *t, int w)
- {
--	if(snarflen){
--		cut(t, w, 0, 0);
--		t->lock++;
--		outTsl(Tpaste, t->tag, t->l[w].p0);
--	}
-+	cut(t, w, 0, 0);
-+	t->lock++;
-+	outTsl(Tpaste, t->tag, t->l[w].p0);
- }
- 
- void
 diff -Naur a/sys/src/cmd/samterm/menu.c b/sys/src/cmd/samterm/menu.c
 --- a/sys/src/cmd/samterm/menu.c	Wed Jan 18 01:12:54 2012
 +++ b/sys/src/cmd/samterm/menu.c	Fri Feb 21 23:51:07 2020
-@@ -27,7 +27,6 @@
- 	Snarf,
- 	Plumb,
- 	Look,
--	Exch,
- 	Search,
- 	NMENU2 = Search,
- 	Send = Search,
-@@ -50,7 +49,6 @@
- 	"snarf",
- 	"plumb",
- 	"look",
--	"<rio>",
- 	0,		/* storage for last pattern */
- };
- 
-@@ -97,12 +95,6 @@
- 			outTsll(Tplumb, t->tag, which->p0, which->p1);
- 		break;
- 
--	case Exch:
--		snarf(t, w);
--		outT0(Tstartsnarf);
--		setlock();
--		break;
--
- 	case Look:
- 		outTsll(Tlook, t->tag, which->p0, which->p1);
- 		setlock();
 @@ -127,58 +119,43 @@
  	int m, i;
  	Text *t;

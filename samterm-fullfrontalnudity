@@ -1,30 +1,30 @@
-diff ca73f673473457152d6f1b2e9030495f8dec5c49 uncommitted
---- a/sys/src/cmd/samterm/flayer.h
-+++ b/sys/src/cmd/samterm/flayer.h
+diff 4584fbf577c30963a958dc79607be3e37b5fab3a uncommitted
+--- a//sys/src/cmd/samterm/flayer.h
++++ b//sys/src/cmd/samterm/flayer.h
 @@ -42,9 +42,9 @@
  void	flupfront(Flayer*);
  Flayer	*flwhich(Point);
  
 -#define	FLMARGIN	4
-+#define	FLMARGIN	1
++#define	FLMARGIN	2
  #define	FLSCROLLWID	12
 -#define	FLGAP		4
 +#define	FLGAP		0
  
  extern	Image	*maincols[NCOL];
  extern	Image	*cmdcols[NCOL];
---- a/sys/src/cmd/samterm/main.c
-+++ b/sys/src/cmd/samterm/main.c
-@@ -43,7 +43,7 @@
- 	scratch = alloc(100*RUNESIZE);
+--- a//sys/src/cmd/samterm/main.c
++++ b//sys/src/cmd/samterm/main.c
+@@ -44,6 +44,8 @@
  	nscralloc = 100;
  	r = screen->r;
--	r.max.y = r.min.y+Dy(r)/5;
-+	r.max.y = r.min.y+(6*font->height)+(3*FLMARGIN);
+ 	r.max.y = r.min.y+Dy(r)/5;
++	if(Dy(r) < font->height)
++		r.max.y = r.min.y + font->height + 2*FLMARGIN;
  	flstart(screen->clipr);
  	rinit(&cmd.rasp);
  	flnew(&cmd.l[0], gettext, 1, &cmd);
-@@ -240,30 +240,73 @@
+@@ -240,30 +242,66 @@
  		getmouse();
  }
  
@@ -66,7 +66,7 @@ diff ca73f673473457152d6f1b2e9030495f8dec5c49 uncommitted
 +	// M
 +	else{
 +		r.min.x = c->min.x;
-+		r.max.x = c->max.x;
++		//r.max.x = screen->max.x;
 +		// A
 +		if(p.y <= c->min.y)
 +			r.max.y = c->min.y;
@@ -76,15 +76,6 @@ diff ca73f673473457152d6f1b2e9030495f8dec5c49 uncommitted
  	}
 -	return rectclip(rp, screen->r) &&
 -	   rp->max.x-rp->min.x>100 && rp->max.y-rp->min.y>40;
-+	/* whee */
-+	if(Dx(r) < 3*FLMARGIN){
-+		r.min.x = screen->r.min.x;
-+		r.max.x = screen->r.max.x;
-+	}
-+	if(Dy(r) < 3*FLMARGIN){
-+		r.min.y = screen->r.min.y;
-+		r.max.y = screen->r.max.y;
-+	}
 +	return r;
 +}
 +
@@ -115,12 +106,14 @@ diff ca73f673473457152d6f1b2e9030495f8dec5c49 uncommitted
 +		*r = inflatepoint(r->min);
 +	if(rectclip(r, screen->r) == 0)
 +		*r = defaultrect();
++	if(Dx(*r) < 2*FLMARGIN || Dy(*r) < 2*FLMARGIN)
++		*r = cmd.l[cmd.front].entire;
 +	return 1;
  }
  
  void
---- a/sys/src/cmd/samterm/menu.c
-+++ b/sys/src/cmd/samterm/menu.c
+--- a//sys/src/cmd/samterm/menu.c
++++ b//sys/src/cmd/samterm/menu.c
 @@ -127,6 +127,7 @@
  	int m, i;
  	Text *t;
@@ -209,7 +202,7 @@ diff ca73f673473457152d6f1b2e9030495f8dec5c49 uncommitted
  Text *
  sweeptext(int new, int tag)
  {
-@@ -205,23 +189,25 @@
+@@ -205,23 +189,27 @@
  	Rectangle r;
  	Text *t;
  
@@ -225,6 +218,8 @@ diff ca73f673473457152d6f1b2e9030495f8dec5c49 uncommitted
 +		r = inflatepoint(mousep->xy);
 +	else
 +		r = defaultrect();
++	if(Dx(r) < 2*FLMARGIN || Dy(r) < 2*FLMARGIN)
++		r = cmd.l[cmd.front].entire;
 +	current((Flayer *)0);
 +	flnew(&t->l[0], gettext, 0, (char *)t);
 +	flinit(&t->l[0], r, font, maincols);	/*bnl*/
@@ -250,8 +245,8 @@ diff ca73f673473457152d6f1b2e9030495f8dec5c49 uncommitted
  }
  
  int
---- a/sys/src/cmd/samterm/samterm.h
-+++ b/sys/src/cmd/samterm/samterm.h
+--- a//sys/src/cmd/samterm/samterm.h
++++ b//sys/src/cmd/samterm/samterm.h
 @@ -118,7 +118,6 @@
  int	center(Flayer*, long);
  int	xmenuhit(int, Menu*);
@@ -270,8 +265,8 @@ diff ca73f673473457152d6f1b2e9030495f8dec5c49 uncommitted
  
  #include "mesg.h"
  
---- a/sys/src/cmd/samterm/scroll.c
-+++ b/sys/src/cmd/samterm/scroll.c
+--- a//sys/src/cmd/samterm/scroll.c
++++ b//sys/src/cmd/samterm/scroll.c
 @@ -111,9 +111,6 @@
  	int x, y, my, oy, h;
  	long p0;

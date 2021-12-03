@@ -1,0 +1,188 @@
+diff 3637e076560fdb3cb06ccd88ab08c530f931c558 uncommitted
+--- a/vdiff.c
++++ b/vdiff.c
+@@ -39,7 +39,7 @@
+ Rectangle scrposr;
+ Rectangle listr;
+ Rectangle textr;
+-Image *cols[Ncols];
++Image *cols[Ncols], *bgcols[Ncols];
+ Image *scrollbg;
+ int scrollsize;
+ int lineh;
+@@ -48,28 +48,36 @@
+ Line **lines;
+ int lsize;
+ int lcount;
++int maxlength;
++int Δpan;
+ const char ellipsis[] = "...";
+ 
+ void
+ drawline(Rectangle r, Line *l)
+ {
+-	Image *bg;
++	int nc, tab, off;
+ 	Point p;
+ 	Rune  rn;
+ 	char *s;
+ 
+-	bg = cols[l->t];
+-	draw(screen, r, bg, nil, ZP);
++	draw(screen, r, bgcols[l->t], nil, ZP);
+ 	p = Pt(r.min.x + Hpadding, r.min.y + (Dy(r)-font->height)/2);
+-	for(s = l->s; *s; s++){
+-		if(*s == '\t')
+-			p = string(screen, p, display->black, ZP, font, "    ");
+-		else if((p.x+Hpadding+stringwidth(font, " ")+stringwidth(font, ellipsis)>=textr.max.x)){
+-			string(screen, p, display->black, ZP, font, ellipsis);
++	off = Δpan / stringwidth(font, " ");
++	for(s = l->s, nc = 0, tab = 0; *s; nc++, off--, tab--){
++		if(*s == '\t'){
++			tab = 4 - nc % 4;
++			s++;
++		}
++		if(tab > 0){
++			if(off <= 0)
++				p = runestring(screen, p, bgcols[l->t], ZP, font, L"█");
++		}else if((p.x+Hpadding+stringwidth(font, " ")+stringwidth(font, ellipsis)>=textr.max.x)){
++			string(screen, p, display->white, ZP, font, ellipsis);
+ 			break;
+ 		}else{
+-			s += chartorune(&rn, s) - 1;
+-			p = runestringn(screen, p, display->black, ZP, font, &rn, 1);
++			s += chartorune(&rn, s);
++			if(off <= 0)
++				p = runestringn(screen, p, cols[l->t], ZP, font, &rn, 1);
+ 		}
+ 	}
+ }
+@@ -80,8 +88,8 @@
+ 	Rectangle lr;
+ 	int i, h, y;
+ 
+-	draw(screen, sr, display->white, nil, ZP);
+-	draw(screen, scrollr, scrollbg, nil, ZP);
++	draw(screen, sr, display->black, nil, ZP);
++	draw(screen, scrollr, display->black, nil, ZP);
+ 	if(lcount>0){
+ 		h = ((double)nlines/lcount)*Dy(scrollr);
+ 		y = ((double)offset/lcount)*Dy(scrollr);
+@@ -88,7 +96,7 @@
+ 		scrposr = Rect(scrollr.min.x, scrollr.min.y+y, scrollr.max.x-1, scrollr.min.y+y+h);
+ 	}else
+ 		scrposr = Rect(scrollr.min.x, scrollr.min.y, scrollr.max.x-1, scrollr.max.y);
+-	draw(screen, scrposr, display->white, nil, ZP);
++	draw(screen, scrposr, scrollbg, nil, ZP);
+ 	for(i=0; i<nlines && offset+i<lcount; i++){
+ 		lr = Rect(textr.min.x, textr.min.y+i*lineh, textr.max.x, textr.min.y+(i+1)*lineh);
+ 		drawline(lr, lines[offset+i]);
+@@ -96,6 +104,20 @@
+ }
+ 
+ void
++pan(int off)
++{
++	int max;
++
++	max = Hpadding + maxlength * stringwidth(font, " ") + 2 * stringwidth(font, ellipsis) - Dx(textr);
++	Δpan += off * stringwidth(font, " ");
++	if(Δpan < 0 || max <= 0)
++		Δpan = 0;
++	else if(Δpan > max)
++		Δpan = max;
++	redraw();
++}
++
++void
+ scroll(int off)
+ {
+ 	if(off<0 && offset<=0)
+@@ -136,8 +158,9 @@
+ 	textr = insetrect(listr, Margin);
+ 	lineh = Vpadding+font->height+Vpadding;
+ 	nlines = Dy(textr)/lineh;
+-	offset = 0;
+ 	scrollsize = mousescrollsize(nlines);
++	if(offset > 0 && offset+nlines>lcount)
++		offset = lcount-nlines+1;
+ 	redraw();
+ }
+ 
+@@ -147,12 +170,17 @@
+ 	Rectangle cr;
+ 
+ 	cr = Rect(0, 0, 1, 1);
+-	cols[Lfile] = allocimage(display, cr, screen->chan, 1, 0xefefefff);
+-	cols[Lsep]  = allocimage(display, cr, screen->chan, 1, 0xeaffffff);
+-	cols[Ladd]  = allocimage(display, cr, screen->chan, 1, 0xe6ffedff);
+-	cols[Ldel]  = allocimage(display, cr, screen->chan, 1, 0xffeef0ff);
+-	cols[Lnone] = display->white;
+-	scrollbg    = allocimage(display, cr, screen->chan, 1, 0x999999ff);
++	cols[Lfile] = allocimage(display, cr, screen->chan, 1, 0xE7DA36FF);
++	cols[Lsep]  = allocimage(display, cr, screen->chan, 1, 0xBEBEBEFF);
++	cols[Ladd]  = allocimage(display, cr, screen->chan, 1, 0x55DD55FF);
++	cols[Ldel]  = allocimage(display, cr, screen->chan, 1, 0xDD5555FF);
++	cols[Lnone] = allocimage(display, cr, screen->chan, 1, 0x777777FF);
++	bgcols[Lfile] = allocimage(display, cr, screen->chan, 1, 0x222222FF);
++	bgcols[Lsep]  = bgcols[Lfile];
++	bgcols[Ladd]  = allocimage(display, cr, screen->chan, 1, 0x061106FF);
++	bgcols[Ldel]  = allocimage(display, cr, screen->chan, 1, 0x060606FF);
++	bgcols[Lnone] = display->black;
++	scrollbg    = cols[Lnone];
+ }
+ 
+ int
+@@ -184,6 +212,8 @@
+ 		sysfatal("malloc: %r");
+ 	l->t = linetype(s);
+ 	l->s = s;
++	if(strlen(s) > maxlength)
++		maxlength = strlen(s);
+ 	l->l = n;
+ 	if(l->t != Lfile && l->t != Lsep)
+ 		l->f = f;
+@@ -233,10 +263,13 @@
+ 		l = parseline(f, n, s);
+ 		if(l->t == Lfile && l->s[0] == '-' && strncmp(l->s+4, "a/", 2)==0)
+ 			ab = 1;
+-		if(l->t == Lfile && l->s[0] == '+'){
++		else if(l->t == Lfile && l->s[0] == '+'){
+ 			f = l->s+4;
+-			if(ab && strncmp(f, "b/", 2)==0)
++			if(ab && strncmp(f, "b/", 2)==0){
+ 				f += 1;
++          			if(access(f, AEXIST) < 0)
++          				f += 1;
++			}
+ 			t = strchr(f, '\t');
+ 			if(t!=nil)
+ 				*t = 0;
+@@ -309,7 +342,7 @@
+ 				break;
+ 			}
+ 
+-			if(ev.mouse.buttons&4){
++			if(ev.mouse.buttons&2){
+ 				n = indexat(ev.mouse.xy);
+ 				if(n>=0 && lines[n+offset]->f != nil)
+ 					plumb(lines[n+offset]->f, lines[n+offset]->l);
+@@ -335,6 +368,18 @@
+ 				break;
+ 			case Kpgdown:
+ 				scroll(nlines);
++				break;
++			case Kup:
++				scroll(-1);
++				break;
++			case Kdown:
++				scroll(1);
++				break;
++			case Kright:
++				pan(4);
++				break;
++			case Kleft:
++				pan(-4);
+ 				break;
+ 			}
+ 			break;

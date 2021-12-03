@@ -1,7 +1,18 @@
-diff 6c9462710539bd35ae5c51de27e7894522683bd7 uncommitted
+diff 3473fa237ca0a639e82a589a9192244684cdc9a6 uncommitted
 --- a//lib/vgadb
 +++ b//lib/vgadb
-@@ -1873,3 +1873,56 @@
+@@ -420,6 +420,10 @@
+ 	vid=0x1002 did=0x5169	# [Qi] Radeon R200
+ 	vid=0x1002 did=0x516a	# [Qj] Radeon R200
+ 	vid=0x1002 did=0x516b	# [Qk] Radeon R200
++	vid=0x1002 did=0x71c0	# Radeon X1600
++	vid=0x1002 did=0x71d4	# Radeon Mobility FireGL V5250
++	vid=0x1002 did=0x71e0	# Radeon X1600, Secondary
++	vid=0x1002 did=0x9505	# Radeon HD 3850
+ 	link=vga
+ 	ctlr=radeon linear=1
+ 	hwgc=radeonhwgc
+@@ -1875,3 +1879,56 @@
  	vrs=617 vre=622 vt=638
  	hsync=? vsync=?
  	lcd=1

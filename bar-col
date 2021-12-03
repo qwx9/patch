@@ -1,0 +1,21 @@
+diff 46d9e65b6623956bc7b1f8d982dc986951cb4962 uncommitted
+--- a/bar.c
++++ b/bar.c
+@@ -311,7 +311,7 @@
+ 	if((kctl = initkeyboard(nil)) == nil)
+ 		sysfatal("initkeyboard: %r");
+ 
+-	cback = allocimage(display, Rect(0,0,1,1), RGB24, 1, brgb);
++	cback = display->black;
+ 	if(brgb == DPalegreygreen)
+ 		brgb = DBlack;
+ 	else{ /* dunno, just invert */
+@@ -318,7 +318,7 @@
+ 		brgb = ~(brgb>>8 | brgb>>16 | brgb>>24);
+ 		brgb = brgb<<8 | brgb<<16 | brgb<<24 | 0xff;
+ 	}
+-	ctext = allocimage(display, Rect(0,0,1,1), RGB24, 1, brgb);
++	ctext = allocimage(display, Rect(0,0,1,1), RGB24, 1, 0x884400FF);
+ 
+ 	a[Emouse].c = mctl->c;
+ 	a[Eresize].c = mctl->resizec;

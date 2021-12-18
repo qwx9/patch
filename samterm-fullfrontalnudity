@@ -1,4 +1,4 @@
-diff 4584fbf577c30963a958dc79607be3e37b5fab3a uncommitted
+diff 614f1d6268fd986fc628eec3754bd4599363ad13 uncommitted
 --- a//sys/src/cmd/samterm/flayer.h
 +++ b//sys/src/cmd/samterm/flayer.h
 @@ -42,9 +42,9 @@
@@ -118,20 +118,11 @@ diff 4584fbf577c30963a958dc79607be3e37b5fab3a uncommitted
  	int m, i;
  	Text *t;
  
-+	l = flwhich(mousep->xy);
++	l = which;
  	mw = -1;
  	switch(m = menuhit(3, mousectl, &menu3, nil)){
  	case -1:
-@@ -133,52 +134,36 @@
- 		break;
- 
- 	case New:
--		if(!hostlock)
--			sweeptext(1, 0);
-+		if(hostlock)
-+			break;
-+		sweeptext(1, 0);
- 		break;
+@@ -139,46 +140,29 @@
  
  	case Zerox:
  	case Resize:
@@ -194,14 +185,6 @@ diff 4584fbf577c30963a958dc79607be3e37b5fab3a uncommitted
  		break;
  
  	default:
-@@ -198,7 +183,6 @@
- 	}
- }
- 
--
- Text *
- sweeptext(int new, int tag)
- {
 @@ -205,23 +189,27 @@
  	Rectangle r;
  	Text *t;

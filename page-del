@@ -1,0 +1,108 @@
+diff 855cf4326f5a07d7142c2d8918f5fa856d912b85 uncommitted
+--- a//sys/src/cmd/page.c
++++ b//sys/src/cmd/page.c
+@@ -74,6 +74,7 @@
+ 	Czerox,
+ 	Cwrite,
+ 	Cext,
++	Cdel,
+ 	Cdummy2,
+ 	Cquit,
+ };
+@@ -98,6 +99,7 @@
+ 	[Czerox]	"zerox",	'z', 0, 0,
+ 	[Cwrite]	"write",	'w', 0, 0,
+ 	[Cext]		"ext",		'x', 0, 0,
++	[Cdel]		"del",		'd', 0, 0,
+ 	[Cdummy2]	"",		0, 0, 0,
+ 	[Cquit]		"quit",		'q', Kdel, Keof,
+ };
+@@ -134,6 +136,7 @@
+ void showpage(Page *);
+ void drawpage(Page *);
+ Point pagesize(Page *);
++void drawlock(int);
+ 
+ Page*
+ addpage(Page *up, char *name, int (*popen)(Page *), void *pdata, int fd)
+@@ -986,6 +989,54 @@
+ 	}
+ }
+ 
++/* page entries are never freed, there's no point
++ * and would break everything */
++Page*
++delpage(Page *p)
++{
++	Page *t, *q;
++
++	if(p == nil)
++		return nil;
++	/* to remove(2) subpages in documents makes no sense, and just
++	 * removing a subentry doesn't seem like a feature worth the bother */
++	if(p->up != root)
++		return p;
++	if(p->fd >= 0)
++		close(p->fd);
++	p->fd = -1;
++	if(remove(p->name) < 0){
++		fprint(2, "remove %s: %r", p->name);
++		return p;
++	}
++	qlock(&pagelock);
++	for(t = p->down; t != nil && t->up != root; t = q){
++		qlock(t);
++		drawlock(0);
++		unloadpage(t);
++		drawlock(1);
++		free(t->name);
++		free(t->data);
++		t->name = t->data = nil;
++		q = nextpage(t);
++		qunlock(t);
++	}
++	drawlock(0);
++	unloadpage(p);
++	drawlock(1);
++	free(p->name);
++	free(p->data);
++	p->name = p->data = nil;
++	if(root->down != p){
++		t = prevpage(p);
++		t->next = p->next;
++	}else
++		root->down = p->next;
++	qunlock(&pagelock);
++	qunlock(p);
++	return p->next != nil ? p->next : t;
++}
++
+ /*
+  * A draw operation that touches only the area contained in bot but not in top.
+  * mp and sp get aligned with bot.min.
+@@ -1461,6 +1512,7 @@
+ 	char buf[NPATH], *s;
+ 	Point o;
+ 	int fd;
++	Page *p;
+ 
+ 	switch(i){
+ 	case Corigsize:
+@@ -1545,6 +1597,17 @@
+ 		break;
+ 	case Csnarf:
+ 		writeaddr(current, "/dev/snarf");
++		break;
++	case Cdel:
++		if(current == nil || !canqlock(current))
++			break;
++		if((p = delpage(current)) == current)
++			break;
++		current = p;
++		if(current == nil)
++			break;
++		forward = 1;
++		showpage(current);
+ 		break;
+ 	case Cnext:
+ 		forward = 1;

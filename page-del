@@ -1,6 +1,6 @@
-diff 855cf4326f5a07d7142c2d8918f5fa856d912b85 uncommitted
---- a/sys/src/cmd/page.c
-+++ b/sys/src/cmd/page.c
+diff c4e30bede2f79c42dacb8c91713abf4a4d91c45c uncommitted
+--- a//sys/src/cmd/page.c
++++ b//sys/src/cmd/page.c
 @@ -74,7 +74,10 @@
  	Czerox,
  	Cwrite,
@@ -111,15 +111,17 @@ diff 855cf4326f5a07d7142c2d8918f5fa856d912b85 uncommitted
  
  	switch(i){
  	case Corigsize:
-@@ -1546,6 +1619,28 @@
+@@ -1546,6 +1619,32 @@
  	case Csnarf:
  		writeaddr(current, "/dev/snarf");
  		break;
 +	case Cpop:
 +		if(current == nil || !canqlock(current))
 +			break;
-+		if((p = poppage(current)) == current)
++		if((p = poppage(current)) == current){
++			qunlock(current);
 +			break;
++		}
 +	Reset:
 +		current = p;
 +		if(current == nil){
@@ -134,8 +136,10 @@ diff 855cf4326f5a07d7142c2d8918f5fa856d912b85 uncommitted
 +	case Cdelete:
 +		if(current == nil || !canqlock(current))
 +			break;
-+		if((p = delpage(current)) == current)
++		if((p = delpage(current)) == current){
++			qunlock(current);
 +			break;
++		}
 +		goto Reset;
  	case Cnext:
  		forward = 1;

@@ -13,7 +13,7 @@ diff 6e64d30454f71ecda88dba1bd792e97509115d73 uncommitted
  	Cfitheight,
  	Crotate90,
  	Cupsidedown,
-+	Cinv,
++	Cinvert,
  	Cdummy1,
  	Cnext,
  	Cprev,
@@ -21,7 +21,7 @@ diff 6e64d30454f71ecda88dba1bd792e97509115d73 uncommitted
  	[Cfitheight]	"fit height",	'h', 0, 0,
  	[Crotate90]	"rotate 90",	'r', 0, 0,
  	[Cupsidedown]	"upside down",	'u', 0, 0,
-+	[Cinv]		"invert",	'i', 0, 0,
++	[Cinvert]	"invert",	'i', 0, 0,
  	[Cdummy1]	"",		0, 0, 0,
  	[Cnext]		"next",		Kright, ' ', '\n', 
  	[Cprev]		"prev",		Kleft, Kbs, 0,
@@ -29,7 +29,7 @@ diff 6e64d30454f71ecda88dba1bd792e97509115d73 uncommitted
  }
  
  void
-+inv(Image *i)
++invertimage(Image *i)
 +{
 +	int n, m;
 +	uchar *b;
@@ -40,11 +40,11 @@ diff 6e64d30454f71ecda88dba1bd792e97509115d73 uncommitted
 +		return;
 +	unloadimage(i, i->r, (uchar*)buf, n);
 +	m = n;
-+	for(p=buf; n>=sizeof *p; n-=sizeof *p, p++)
++	for(p=buf; m>=sizeof *p; m-=sizeof *p, p++)
 +		*p = ~*p;
-+	for(b=(uchar*)p; n>0; n--, b++)
++	for(b=(uchar*)p; m>0; m--, b++)
 +		*b = ~*b;
-+	loadimage(i, i->r, (uchar*)buf, m);
++	loadimage(i, i->r, (uchar*)buf, n);
 +	free(buf);
 +}
 +
@@ -57,7 +57,7 @@ diff 6e64d30454f71ecda88dba1bd792e97509115d73 uncommitted
  		else {
  			lockdisplay(display);
 +			if(invert)
-+				inv(p->image);
++				invertimage(p->image);
  			imemsize += imagesize(p->image);
  			unlockdisplay(display);
  		}
@@ -66,7 +66,7 @@ diff 6e64d30454f71ecda88dba1bd792e97509115d73 uncommitted
  		resize = subpt(screen->r.max, screen->r.min);
  		resize.x = 0;
 +		goto Unload;
-+	case Cinv:
++	case Cinvert:
 +		invert = !invert;
  		goto Unload;
  	case Czoomin:

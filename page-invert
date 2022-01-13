@@ -1,9 +1,6 @@
-this shit sucks. that code doesn't belong there. something in pipeline would be
-better. pico?
-
-diff -r 3cb0cf9ab43a sys/src/cmd/page.c
---- a/sys/src/cmd/page.c	Mon Feb 08 20:07:56 2016 -0500
-+++ b/sys/src/cmd/page.c	Thu Feb 11 16:16:28 2016 +0100
+diff 6e64d30454f71ecda88dba1bd792e97509115d73 uncommitted
+--- a//sys/src/cmd/page.c
++++ b//sys/src/cmd/page.c
 @@ -33,6 +33,7 @@
  int imode;
  int newwin;
@@ -28,23 +25,26 @@ diff -r 3cb0cf9ab43a sys/src/cmd/page.c
  	[Cdummy1]	"",		0, 0, 0,
  	[Cnext]		"next",		Kright, ' ', '\n', 
  	[Cprev]		"prev",		Kleft, Kbs, 0,
-@@ -894,6 +897,23 @@
+@@ -894,6 +897,26 @@
  }
  
  void
 +inv(Image *i)
 +{
-+	int n;
-+	uchar *buf, *p;
++	int n, m;
++	uchar *b;
++	uintptr *buf, *p;
 +
 +	n = imagesize(i);
-+	buf = malloc(n);
-+	if(buf == 0)
++	if((buf = malloc(n)) == nil)
 +		return;
-+	unloadimage(i, i->r, buf, n);
-+	for(p=buf; p<buf+n; p++)
++	unloadimage(i, i->r, (uchar*)buf, n);
++	m = n;
++	for(p=buf; n>=sizeof *p; n-=sizeof *p, p++)
 +		*p = ~*p;
-+	loadimage(i, i->r, buf, n);
++	for(b=(uchar*)p; n>0; n--, b++)
++		*b = ~*b;
++	loadimage(i, i->r, (uchar*)buf, m);
 +	free(buf);
 +}
 +
@@ -52,22 +52,22 @@ diff -r 3cb0cf9ab43a sys/src/cmd/page.c
  loadpage(Page *p)
  {
  	int fd;
-@@ -912,6 +932,8 @@
- 		if(p->image == nil)
+@@ -913,6 +936,8 @@
  			p->open = nil;
  		else {
+ 			lockdisplay(display);
 +			if(invert)
 +				inv(p->image);
- 			lockdisplay(display);
  			imemsize += imagesize(p->image);
  			unlockdisplay(display);
-@@ -1494,6 +1516,9 @@
+ 		}
+@@ -1492,6 +1517,9 @@
+ 		zoom = 1;
  		resize = subpt(screen->r.max, screen->r.min);
  		resize.x = 0;
- 		goto Unload;
++		goto Unload;
 +	case Cinv:
 +		invert = !invert;
-+		goto Unload;
+ 		goto Unload;
  	case Czoomin:
  	case Czoomout:
- 		if(current == nil || !canqlock(current))

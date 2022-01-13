@@ -1,0 +1,51 @@
+diff 6e64d30454f71ecda88dba1bd792e97509115d73 uncommitted
+--- a//sys/src/cmd/page.c
++++ b//sys/src/cmd/page.c
+@@ -951,7 +951,8 @@
+ loadpages(Page *p, int oviewgen)
+ {
+ 	while(p != nil && viewgen == oviewgen){
+-		qlock(p);
++		if(!canqlock(p))
++			goto next;
+ 		loadpage(p);
+ 		if(viewgen != oviewgen){
+ 			unloadpage(p);
+@@ -974,6 +975,7 @@
+ 		qunlock(p);
+ 		if(p != current && imemsize >= imemlimit)
+ 			break;		/* only one page ahead once we reach the limit */
++	next:
+ 		if(forward < 0){
+ 			if(p->up == nil || p->up->down == p)
+ 				break;
+@@ -1309,16 +1311,17 @@
+ 	writeaddr(p, "/dev/label");
+ 	current = p;
+ 	oviewgen = viewgen;
++	if(nproc >= NPROC)
++		waitpid();
+ 	switch(rfork(RFPROC|RFMEM)){
+ 	case -1:
+ 		sysfatal("rfork: %r");
+ 	case 0:
+ 		loadpages(p, oviewgen);
++		nproc--;
+ 		exits(nil);
+ 	}
+-	if(++nproc >= NPROC)
+-		if(waitpid() > 0)
+-			nproc--;
++	nproc++;
+ }
+ 
+ /* recursive display lock, called from main proc only */
+@@ -1691,6 +1694,8 @@
+ 		addpage(root, "stdin", popenfile, strdup("/fd/0"), -1);
+ 	for(; *argv; argv++)
+ 		addpage(root, *argv, popenfile, strdup(*argv), -1);
++	for(i=0; i<NPROC; i++)
++		showpage(current);
+ 
+ 	drawlock(1);
+ 	for(;;){

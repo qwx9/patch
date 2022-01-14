@@ -40,12 +40,12 @@ diff 6e64d30454f71ecda88dba1bd792e97509115d73 uncommitted
  }
  
  /* recursive display lock, called from main proc only */
-@@ -1691,6 +1694,8 @@
- 		addpage(root, "stdin", popenfile, strdup("/fd/0"), -1);
- 	for(; *argv; argv++)
+@@ -1693,6 +1696,8 @@
  		addpage(root, *argv, popenfile, strdup(*argv), -1);
-+	for(i=0; i<NPROC; i++)
-+		showpage(current);
  
  	drawlock(1);
++	for(i=0; i<NPROC; i++)		/* rice */
++		showpage(current);
  	for(;;){
+ 		drawlock(0);
+ 		i=event(&e);

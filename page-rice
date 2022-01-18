@@ -1,25 +1,39 @@
-diff 6e64d30454f71ecda88dba1bd792e97509115d73 uncommitted
+diff 6f9838a6a5b80e0253bdc8fb194ad6f15eb655f5 uncommitted
 --- a//sys/src/cmd/page.c
 +++ b//sys/src/cmd/page.c
-@@ -951,7 +951,8 @@
+@@ -898,10 +898,6 @@
+ {
+ 	int fd;
+ 
+-	qlock(&lru);
+-	llinkhead(p);
+-	qunlock(&lru);
+-
+ 	if(p->open != nil && p->image == nil){
+ 		fd = openpage(p);
+ 		if(fd >= 0){
+@@ -951,7 +947,11 @@
  loadpages(Page *p, int oviewgen)
  {
  	while(p != nil && viewgen == oviewgen){
 -		qlock(p);
++		qlock(&lru);
++		llinkhead(p);
++		qunlock(&lru);
 +		if(!canqlock(p))
 +			goto next;
  		loadpage(p);
  		if(viewgen != oviewgen){
  			unloadpage(p);
-@@ -974,6 +975,7 @@
+@@ -972,6 +972,7 @@
+ 			unlockdisplay(display);
+ 		}
  		qunlock(p);
++	next:
  		if(p != current && imemsize >= imemlimit)
  			break;		/* only one page ahead once we reach the limit */
-+	next:
  		if(forward < 0){
- 			if(p->up == nil || p->up->down == p)
- 				break;
-@@ -1309,16 +1311,17 @@
+@@ -1309,16 +1310,17 @@
  	writeaddr(p, "/dev/label");
  	current = p;
  	oviewgen = viewgen;
@@ -40,12 +54,12 @@ diff 6e64d30454f71ecda88dba1bd792e97509115d73 uncommitted
  }
  
  /* recursive display lock, called from main proc only */
-@@ -1693,6 +1696,8 @@
+@@ -1691,6 +1693,8 @@
+ 		addpage(root, "stdin", popenfile, strdup("/fd/0"), -1);
+ 	for(; *argv; argv++)
  		addpage(root, *argv, popenfile, strdup(*argv), -1);
++	for(i=0; i<NPROC-1; i++)	/* rice */
++		showpage1(current);
  
  	drawlock(1);
-+	for(i=0; i<NPROC; i++)		/* rice */
-+		showpage(current);
  	for(;;){
- 		drawlock(0);
- 		i=event(&e);

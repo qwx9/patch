@@ -1,6 +1,15 @@
 diff 6f9838a6a5b80e0253bdc8fb194ad6f15eb655f5 uncommitted
 --- a//sys/src/cmd/page.c
 +++ b//sys/src/cmd/page.c
+@@ -54,7 +54,7 @@
+ char pagespool[] = "/tmp/pagespool.";
+ 
+ enum {
+-	NPROC = 4,
++	NPROC = 8,
+ 	NBUF = 8*1024,
+ 	NPATH = 1024,
+ };
 @@ -898,10 +898,6 @@
  {
  	int fd;
@@ -58,7 +67,7 @@ diff 6f9838a6a5b80e0253bdc8fb194ad6f15eb655f5 uncommitted
  		addpage(root, "stdin", popenfile, strdup("/fd/0"), -1);
  	for(; *argv; argv++)
  		addpage(root, *argv, popenfile, strdup(*argv), -1);
-+	for(i=0; i<NPROC-1; i++)	/* rice */
++	for(i=0; i<NPROC/4; i++)	/* rice */
 +		showpage1(current);
  
  	drawlock(1);

@@ -1,4 +1,4 @@
-diff c4e30bede2f79c42dacb8c91713abf4a4d91c45c uncommitted
+diff aa14ba62fd02ffd0e7053c23b2918e7aa46bcb86 uncommitted
 --- a//sys/src/cmd/page.c
 +++ b//sys/src/cmd/page.c
 @@ -74,7 +74,10 @@
@@ -35,96 +35,102 @@ diff c4e30bede2f79c42dacb8c91713abf4a4d91c45c uncommitted
  	}
  }
  
-+/* page entries are never freed, there's no point
-+ * and would break everything */
++/* doesn't actually free the page entry or touch links to avoid breakage */
 +Page*
-+poppage(Page *p)
++freepage(Page *p, Page *prev)
 +{
-+	Page *t, *q;
++	Page *next, *up;
 +
-+	if(p == nil)
-+		return nil;
-+	if(p->up != root)
-+		return p;
-+	qlock(&pagelock);
-+	for(t = p->down; t != nil && t->up != root; t = q){
-+		qlock(t);
-+		drawlock(0);
-+		unloadpage(t);
-+		drawlock(1);
-+		free(t->name);
-+		free(t->data);
-+		t->name = t->data = nil;
-+		q = nextpage(t);
-+		qunlock(t);
-+	}
 +	drawlock(0);
 +	unloadpage(p);
 +	drawlock(1);
-+	free(p->name);
-+	free(p->data);
-+	p->name = p->data = nil;
-+	t = prevpage(p);
-+	if(root->tail == p)
-+		root->tail = t;
-+	if(root->down == p || t == nil)
-+		root->down = p->next;
-+	else
-+		t->next = p->next;
-+	qunlock(&pagelock);
-+	qunlock(p);
-+	if(p->next != nil){
-+		forward = 1;
-+		return p->next;
-+	}
-+	forward = -1;
-+	return t;
-+}
-+
-+Page*
-+delpage(Page *p)
-+{
-+	if(p == nil)
-+		return nil;
-+	/* to remove(2) subpages in documents makes no sense, and just
-+	 * removing a subentry doesn't seem like a feature worth the bother */
-+	if(p->up != root)
-+		return p;
 +	if(p->fd >= 0)
 +		close(p->fd);
 +	p->fd = -1;
-+	if(remove(p->name) < 0){
-+		fprint(2, "remove %s: %r", p->name);
++	free(p->name);
++	free(p->data);
++	p->name = p->data = p->open = nil;
++	next = nextpage(p);
++	up = p->up;
++	if(up->down == p){
++		if(up->tail != p)
++			up->down = next;
++		else
++			up->down = nil;
++	}else if(up->tail == p){
++		up->tail = prev;
++		prev->next = nil;
++	}else
++		prev->next = next;
++	return next;
++}
++
++Page*
++poppage(Page *p, int del)
++{
++	Page *t, *prev, *next;
++
++	if(p == nil)
++		return nil;
++	if(p == root)
 +		return p;
++	if(del){
++		if(!(access(p->name, OREAD) == 0 && remove(p->name) == 0
++		|| p->data != nil && access(p->data, OREAD) == 0 && remove(p->data) == 0)){
++			fprint(2, "remove %s: %r", p->name);
++			return p;
++		}
 +	}
-+	return poppage(p);
++	qlock(&pagelock);
++	for(t = p->down, prev = p; t != nil && t->up != p->up; prev = t, t = next){
++		qlock(t);
++		next = freepage(t, prev);
++		qunlock(t);
++	}
++	p->down = nil;
++	prev = prevpage(p);
++	next = freepage(p, prev);
++	qunlock(&pagelock);
++	qunlock(p);
++	if(next != nil){
++		forward = 1;
++		return next;
++	}
++	forward = -1;
++	return prev;
 +}
 +
  /*
   * A draw operation that touches only the area contained in bot but not in top.
   * mp and sp get aligned with bot.min.
-@@ -1461,6 +1533,7 @@
+@@ -1460,8 +1532,10 @@
+ {
  	char buf[NPATH], *s;
  	Point o;
- 	int fd;
+-	int fd;
++	int fd, del;
 +	Page *p;
  
++	del = 0;
  	switch(i){
  	case Corigsize:
-@@ -1546,6 +1619,32 @@
+ 		pos = ZP;
+@@ -1545,6 +1619,25 @@
+ 		break;
  	case Csnarf:
  		writeaddr(current, "/dev/snarf");
- 		break;
++		break;
++	case Cdelete:
++		del = 1;
++		/* wet floor */
 +	case Cpop:
 +		if(current == nil || !canqlock(current))
 +			break;
-+		if((p = poppage(current)) == current){
++		if((p = poppage(current, del)) == current){
 +			qunlock(current);
 +			break;
 +		}
-+	Reset:
-+		current = p;
-+		if(current == nil){
++		if((current = p) == nil){
 +			drawlock(0);
 +			draw(screen, screen->r, paper, nil, ZP);
 +			drawframe(screen->r);
@@ -132,15 +138,6 @@ diff c4e30bede2f79c42dacb8c91713abf4a4d91c45c uncommitted
 +			break;
 +		}
 +		showpage(current);
-+		break;
-+	case Cdelete:
-+		if(current == nil || !canqlock(current))
-+			break;
-+		if((p = delpage(current)) == current){
-+			qunlock(current);
-+			break;
-+		}
-+		goto Reset;
+ 		break;
  	case Cnext:
  		forward = 1;
- 		showpage(nextpage(current));

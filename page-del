@@ -1,4 +1,4 @@
-diff aa14ba62fd02ffd0e7053c23b2918e7aa46bcb86 uncommitted
+diff 9d43029ff984435111eff658308a44b4f3eee1cc uncommitted
 --- a//sys/src/cmd/page.c
 +++ b//sys/src/cmd/page.c
 @@ -74,7 +74,10 @@
@@ -31,7 +31,7 @@ diff aa14ba62fd02ffd0e7053c23b2918e7aa46bcb86 uncommitted
  
  Page*
  addpage(Page *up, char *name, int (*popen)(Page *), void *pdata, int fd)
-@@ -986,6 +993,71 @@
+@@ -987,6 +994,72 @@
  	}
  }
  
@@ -47,9 +47,10 @@ diff aa14ba62fd02ffd0e7053c23b2918e7aa46bcb86 uncommitted
 +	if(p->fd >= 0)
 +		close(p->fd);
 +	p->fd = -1;
++	/* not touching p->data */
 +	free(p->name);
-+	free(p->data);
-+	p->name = p->data = p->open = nil;
++	p->name = nil;
++	p->open = nil;
 +	next = nextpage(p);
 +	up = p->up;
 +	if(up->down == p){
@@ -103,7 +104,7 @@ diff aa14ba62fd02ffd0e7053c23b2918e7aa46bcb86 uncommitted
  /*
   * A draw operation that touches only the area contained in bot but not in top.
   * mp and sp get aligned with bot.min.
-@@ -1460,8 +1532,10 @@
+@@ -1462,8 +1535,10 @@
  {
  	char buf[NPATH], *s;
  	Point o;
@@ -115,7 +116,7 @@ diff aa14ba62fd02ffd0e7053c23b2918e7aa46bcb86 uncommitted
  	switch(i){
  	case Corigsize:
  		pos = ZP;
-@@ -1545,6 +1619,25 @@
+@@ -1547,6 +1622,25 @@
  		break;
  	case Csnarf:
  		writeaddr(current, "/dev/snarf");

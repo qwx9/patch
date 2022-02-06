@@ -1,0 +1,116 @@
+diff 251c3cfd610abd169676852d301a2aa1267c0e57 uncommitted
+--- a/sys/src/cmd/upas/fs/dat.h
++++ b/sys/src/cmd/upas/fs/dat.h
+@@ -342,8 +342,10 @@
+ extern int	plumbing;
+ extern ulong	msgallocd;
+ extern ulong	msgfreed;
++extern int	nocertcheck;
+ extern Mailbox	*mbl;
+ extern Message	*root;
++extern char	*logf;
+ 
+ #define	dprint(...)	if(debug) fprint(2, __VA_ARGS__); else {}
+ #define	Topmsg(mb, m)	(m->whole == mb->root)
+--- a/sys/src/cmd/upas/fs/fs.c
++++ b/sys/src/cmd/upas/fs/fs.c
+@@ -114,6 +114,7 @@
+ int	debug;
+ int	plumbing = 1;
+ ulong	cachetarg = Maxcache;
++int	nocertcheck; /* ignore unrecognized certs. Still logged */
+ Mailbox	*mbl;
+ 
+ static	int	messagesize = 8*1024 + IOHDRSZ;
+@@ -203,7 +204,7 @@
+ void
+ usage(void)
+ {
+-	fprint(2, "usage: upas/fs [-DSbdlmnps] [-c cachetarg] [-f mboxfile] [-m mountpoint]\n");
++	fprint(2, "usage: upas/fs [-CDSbdlmnps] [-c cachetarg] [-f mboxfile] [-m mountpoint]\n");
+ 	exits("usage");
+ }
+ 
+@@ -271,6 +272,9 @@
+ 	v = argv;
+ 
+ 	ARGBEGIN{
++	case 'C':
++		nocertcheck = 1;
++		break;
+ 	case 'D':
+ 		Dflag = 1;
+ 		break;
+--- a/sys/src/cmd/upas/fs/mbox.c
++++ b/sys/src/cmd/upas/fs/mbox.c
+@@ -1634,7 +1634,7 @@
+ 	return i;
+ }
+ 
+-static char *logf = "fs";
++char *logf = "fs";
+ 
+ void
+ logmsg(Message *m, char *fmt, ...)
+--- a/sys/src/cmd/upas/fs/tls.c
++++ b/sys/src/cmd/upas/fs/tls.c
+@@ -17,6 +17,10 @@
+ 		close(ofd);
+ 		return -1;
+ 	}
++	if(nocertcheck){
++		syslog(Sflag, logf, "ignoring cert for %s", host);
++		goto skip;
++	}
+ 	thumb = initThumbprints("/sys/lib/tls/mail", "/sys/lib/tls/mail.exclude", "x509");
+ 	if(thumb != nil){
+ 		if(!okCertificate(conn.cert, conn.certlen, thumb)){
+@@ -26,6 +30,7 @@
+ 		}
+ 		freeThumbprints(thumb);
+ 	}
++skip:
+ 	free(conn.cert);
+ 	free(conn.sessionID);
+ 	return fd;
+--- a/sys/src/cmd/upas/smtp/smtp.c
++++ b/sys/src/cmd/upas/smtp/smtp.c
+@@ -46,6 +46,7 @@
+ int	quitting;	/* when error occurs in quit */
+ int	tryauth;	/* Try to authenticate, if supported */
+ int	trysecure;	/* Try to use TLS if the other side supports it */
++int	nocertcheck; /* ignore unrecognized certs. Still logged */
+ 
+ char	*quitrv;	/* deferred return value when in quit */
+ char	ddomain[1024];	/* domain name of destination machine */
+@@ -85,7 +86,7 @@
+ void
+ usage(void)
+ {
+-	fprint(2, "usage: smtp [-aAdfipst] [-b busted-mx] [-g gw] [-h host] "
++	fprint(2, "usage: smtp [-aACdfipst] [-b busted-mx] [-g gw] [-h host] "
+ 		"[-u user] [.domain] net!host[!service] sender rcpt-list\n");
+ 	exits(Giveup);
+ }
+@@ -187,6 +188,9 @@
+ 	case 'u':
+ 		user = EARGF(usage());
+ 		break;
++	case 'C':
++		nocertcheck = 1;
++		break;
+ 	default:
+ 		usage();
+ 		break;
+@@ -415,6 +419,11 @@
+ 	Bterm(&bin);
+ 	Binit(&bin, fd, OREAD);
+ 
++	if (nocertcheck) {
++		syslog(0, "smtp", "ignoring cert for %s", ddomain);
++		err = nil;
++		goto Out;
++	}
+ 	goodcerts = initThumbprints(smtpthumbs, smtpexclthumbs, "x509");
+ 	if (goodcerts == nil) {
+ 		syslog(0, "smtp", "bad thumbprints in %s", smtpthumbs);

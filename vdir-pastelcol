@@ -1,0 +1,52 @@
+diff 848a598df06df0557bfe37dd6711d8ed966a56b6 uncommitted
+--- a/alert.c
++++ b/alert.c
+@@ -38,8 +38,8 @@
+ 	alts[2].v  = nil;
+ 	while(nbrecv(kctl->c, nil)==1)
+ 		;
+-	bg = allocimage(display, Rect(0,0,1,1), screen->chan, 1, 0xf8d7daff);
+-	fg = allocimage(display, Rect(0,0,1,1), screen->chan, 1, 0x721c24ff);
++	bg = display->black;
++	fg = allocimage(display, Rect(0,0,1,1), screen->chan, 1, 0x777777ff);
+ 	tf = openfont(display, Titlefont);
+ 	if(tf==nil)
+ 		sysfatal("openfont: %r");
+--- a/vdir.c
++++ b/vdir.c
+@@ -224,12 +224,12 @@
+ void
+ initcolors(void)
+ {
+-	toolbg = allocimage(display, Rect(0,0,1,1), screen->chan, 1, 0xEFEFEFFF);
++	toolbg = allocimage(display, Rect(0,0,1,1), screen->chan, 1, 0x555555FF);
+ 	toolfg = display->black;
+-	viewbg = display->white;
+-	viewfg = display->black;
+-	scrollbg = allocimage(display, Rect(0,0,1,1), screen->chan, 1, 0x999999FF);
+-	scrollfg = display->white;
++	viewbg = allocimage(display, Rect(0,0,1,1), screen->chan, 1, 0x111111FF);
++	viewfg = allocimage(display, Rect(0,0,1,1), screen->chan, 1, 0xAAAAAAFF);
++	scrollbg = toolbg;
++	scrollfg = toolfg;
+ }
+ 
+ Image*
+@@ -352,7 +352,7 @@
+ 	Point p;
+ 	int i, h, y;
+ 
+-	draw(screen, screen->r, display->white, nil, ZP);
++	draw(screen, screen->r, display->black, nil, ZP);
+ 	p = addpt(screen->r.min, Pt(0, Toolpadding));
+ 	draw(screen, toolr, toolbg, nil, ZP);
+ 	line(screen, Pt(toolr.min.x, toolr.max.y), toolr.max, 0, 0, 0, toolfg, ZP);
+@@ -374,7 +374,7 @@
+ 		scrposr = Rect(scrollr.min.x, scrollr.min.y+y, scrollr.max.x-1, scrollr.min.y+y+h);
+ 	}else
+ 		scrposr = Rect(scrollr.min.x, scrollr.min.y, scrollr.max.x-1, scrollr.max.y);
+-	draw(screen, scrposr, display->white, nil, ZP);
++	draw(screen, scrposr, display->black, nil, ZP);
+ 	for(i = 0; i<nlines && offset+i<ndirs; i++){
+ 		drawdir(i, 0);
+ 	}

@@ -23,7 +23,32 @@ diff 8154ecb3fc6c1265e0d5c0ab4288ad514463924d uncommitted
  	if(doexec(cmd) < 0)
  		showerrstr("Cannot remove file/directory");
  	else
-@@ -591,6 +591,15 @@
+@@ -272,7 +272,7 @@
+ }
+ 
+ int
+-plumbfile(char *path, char *name)
++plumbfile(char *path, char *name, int isdir)
+ {
+ 	char *f;
+ 	int e;
+@@ -279,9 +279,12 @@
+ 
+ 	f = smprint("%s/%s", path, name);
+ 	e = access(f, 0)==0;
+-	if(e)
+-		plumbsendtext(plumbfd, "vdir", nil, path, name);
+-	else{
++	if(e){
++	    if(isdir)
++			plumbsendtext(plumbfd, "vdir", nil, nil, f);
++		else
++			plumbsendtext(plumbfd, "vdir", nil, path, name);
++	}else{
+ 		alert("Error", "File does not exist anymore", nil, mctl, kctl);
+ 		loaddirs();
+ 		redraw();
+@@ -591,6 +594,15 @@
  		if(scrolling){
  			dy = 1+nlines*((double)(m.xy.y - scrollr.min.y)/Dy(scrollr));
  			scrollup(dy);
@@ -39,7 +64,7 @@ diff 8154ecb3fc6c1265e0d5c0ab4288ad514463924d uncommitted
  		}
  	}else if(m.buttons&2){
  		if(ptinrect(m.xy, viewr)){
-@@ -598,6 +607,7 @@
+@@ -598,6 +610,7 @@
  			if(n==-1)
  				return;
  			d = dirs[offset+n];
@@ -47,7 +72,7 @@ diff 8154ecb3fc6c1265e0d5c0ab4288ad514463924d uncommitted
  			switch(menuhit(2, mctl, &menu2, nil)){
  			case Mdelete:
  				rm(d.name);
-@@ -633,7 +643,7 @@
+@@ -633,7 +646,7 @@
  				redraw();
  			}
  		}else if(ptinrect(m.xy, pathr)){
@@ -56,7 +81,7 @@ diff 8154ecb3fc6c1265e0d5c0ab4288ad514463924d uncommitted
  		}else if(ptinrect(m.xy, newdirr)){
  			m.xy = cept("Create directory");
  			if(enter("Create directory", buf, sizeof buf, mctl, kctl, nil)>0){
-@@ -651,13 +661,8 @@
+@@ -651,13 +664,8 @@
  			if(n==-1)
  				return;
  			d = dirs[offset+n];
@@ -67,7 +92,7 @@ diff 8154ecb3fc6c1265e0d5c0ab4288ad514463924d uncommitted
 -				if(plumbfile(path, d.name))
 -					flash(n);
 -			}
-+			if(plumbfile(path, d.name))
++			if(plumbfile(path, d.name, d.qid.type & QTDIR))
 +				flash(n);
  		}
  	}else if(m.buttons&8)

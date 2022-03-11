@@ -1,0 +1,74 @@
+diff 8154ecb3fc6c1265e0d5c0ab4288ad514463924d uncommitted
+--- a/vdir.c
++++ b/vdir.c
+@@ -29,10 +29,10 @@
+ 
+ enum
+ {
+-	Mdelete,
+ 	Mrename,
++	Mdelete,
+ };
+-char *menu2str[] = { "delete", "rename", nil };
++char *menu2str[] = { "rename", "delete", nil };
+ Menu menu2 = { menu2str };
+ 
+ const char ellipsis[] = "…";
+@@ -252,7 +252,7 @@
+ {
+ 	char cmd[300];
+ 
+-	snprint(cmd, sizeof cmd, "rm -r %s/%s", path, name);
++	snprint(cmd, sizeof cmd, "rm %s/%s", path, name);
+ 	if(doexec(cmd) < 0)
+ 		showerrstr("Cannot remove file/directory");
+ 	else
+@@ -591,6 +591,15 @@
+ 		if(scrolling){
+ 			dy = 1+nlines*((double)(m.xy.y - scrollr.min.y)/Dy(scrollr));
+ 			scrollup(dy);
++		}else if(ptinrect(m.xy, viewr)){
++			n = indexat(m.xy);
++			if(n==-1)
++				return;
++			d = dirs[offset+n];
++			if(d.qid.type & QTDIR){
++				cd(d.name);
++				redraw();
++			}
+ 		}
+ 	}else if(m.buttons&2){
+ 		if(ptinrect(m.xy, viewr)){
+@@ -598,6 +607,7 @@
+ 			if(n==-1)
+ 				return;
+ 			d = dirs[offset+n];
++			menu2.lasthit = 0;
+ 			switch(menuhit(2, mctl, &menu2, nil)){
+ 			case Mdelete:
+ 				rm(d.name);
+@@ -633,7 +643,7 @@
+ 				redraw();
+ 			}
+ 		}else if(ptinrect(m.xy, pathr)){
+-			plumbsendtext(plumbfd, "vdir", nil, nil, path);
++			plumbsendtext(plumbfd, "vdirw", nil, nil, path);
+ 		}else if(ptinrect(m.xy, newdirr)){
+ 			m.xy = cept("Create directory");
+ 			if(enter("Create directory", buf, sizeof buf, mctl, kctl, nil)>0){
+@@ -651,13 +661,8 @@
+ 			if(n==-1)
+ 				return;
+ 			d = dirs[offset+n];
+-			if(d.qid.type & QTDIR){
+-				cd(d.name);
+-				redraw();
+-			}else{
+-				if(plumbfile(path, d.name))
+-					flash(n);
+-			}
++			if(plumbfile(path, d.name))
++				flash(n);
+ 		}
+ 	}else if(m.buttons&8)
+ 		scrollup(Slowscroll);

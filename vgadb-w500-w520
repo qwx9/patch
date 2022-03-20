@@ -1,4 +1,4 @@
-diff 3473fa237ca0a639e82a589a9192244684cdc9a6 uncommitted
+diff d55a64c90512aae66b5cabac57edc3e957bd3f0c uncommitted
 --- a//lib/vgadb
 +++ b//lib/vgadb
 @@ -420,6 +420,10 @@
@@ -12,7 +12,7 @@ diff 3473fa237ca0a639e82a589a9192244684cdc9a6 uncommitted
  	link=vga
  	ctlr=radeon linear=1
  	hwgc=radeonhwgc
-@@ -1875,3 +1879,56 @@
+@@ -1876,3 +1880,70 @@
  	vrs=617 vre=622 vt=638
  	hsync=? vsync=?
  	lcd=1
@@ -31,6 +31,7 @@ diff 3473fa237ca0a639e82a589a9192244684cdc9a6 uncommitted
 +	#vrs=1088 vre=1102 vt=1112
 +	#hsync=- vsync=-
 +
++# hdmi: 6 (dpd); edp/dpa = 3
 +2715qt=3840x2160		# 30.00Hz, 67.50KHz
 +	display=6
 +	defaultclock=297
@@ -69,3 +70,16 @@ diff 3473fa237ca0a639e82a589a9192244684cdc9a6 uncommitted
 +	shb=1950 ehb=2030 ht=2060
 +	vrs=1202 vre=1206 vt=1220
 +	hsync=- vsync=- 
++
++x240=1366x768	# 60Hz
++	display=3
++	clock=72
++	shb=1374 ehb=1382 ht=1500
++	vrs=776 vre=784 vt=800
++	hsync=- vsync=- 
++x240=1920x1080 	# 60Hz
++	display=3
++	clock=138.78
++	shb=1966 ehb=1996 ht=2080
++	vrs=1082 vre=1086 vt=1112
++	hsync=+ vsync=- 

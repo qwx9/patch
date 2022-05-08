@@ -1,0 +1,26 @@
+diff 1582b3f523dd18147b2c32003584b990b6e58bfe uncommitted
+--- a/fm.c
++++ b/fm.c
+@@ -10,6 +10,7 @@
+ 	Reclimit = 10,
+ 
+ 	/* score modifiers */
++/*
+ 	Bseq = 15,
+ 	Bsep = 30,
+ 	Bcamel = 30,
+@@ -17,6 +18,14 @@
+ 	Plead = -5,
+ 	Pmaxlead = -15,
+ 	Punmatched = -1,
++*/
++	Bseq = 1, // bonus for adjacent matches
++	Bsep = 0, // bonus if match occurs after a separator
++	Bcamel = 0, // bonus if match is uppercase and prev is lower
++	Bfirst = 1, // bonus if the first letter is matched
++	Plead = 0, // penalty applied for every letter in str before the first
++	Pmaxlead = -100, // maximum penalty for leading letters
++	Punmatched = -1, // penalty for every letter that doesn't matter
+ };
+ 
+ int

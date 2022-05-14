@@ -1,0 +1,35 @@
+diff 0aa00960661531ff5a635d9c418901323299e4b4 uncommitted
+--- a/sys/src/cmd/vt/main.c
++++ b/sys/src/cmd/vt/main.c
+@@ -24,6 +24,7 @@
+ };
+ 
+ enum menuact3{
++	Mnil,
+ 	M24x80,
+ 	Mcrnl,
+ 	Mnl,
+@@ -44,6 +45,7 @@
+ };
+ 
+ char	*menutext3[] = {
++	[Mnil]	"-",
+ 	[M24x80]	"24x80",
+ 	[Mcrnl]		"crnl",
+ 	[Mnl]		"nl",
+@@ -1172,10 +1174,11 @@
+ 
+ 	p = pos(mc->xy);
+ 	if(button(3)) {
+-		menu3.item[1] = ttystate[cs->raw].crnl ? "cr" : "crnl";
+-		menu3.item[2] = ttystate[cs->raw].nlcr ? "nl" : "nlcr";
+-		menu3.item[3] = cs->raw ? "cooked" : "raw";
+-		menu3.item[4] = blocksel ? "linesel" : "blocksel";
++		menu3.lasthit = 0;
++		menu3.item[Mcrnl] = ttystate[cs->raw].crnl ? "cr" : "crnl";
++		menu3.item[Mnl] = ttystate[cs->raw].nlcr ? "nl" : "nlcr";
++		menu3.item[Mraw] = cs->raw ? "cooked" : "raw";
++		menu3.item[Mblocksel] = blocksel ? "linesel" : "blocksel";
+ 
+ 		switch(menuhit(3, mc, &menu3, nil)) {
+ 		case M24x80:		/* 24x80 */

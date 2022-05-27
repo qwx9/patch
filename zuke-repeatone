@@ -1,0 +1,96 @@
+diff 3351b674802d5a69ddb6d4d0354c0e034804b0c1 uncommitted
+--- a//sys/src/cmd/audio/zuke/zuke.c
++++ b//sys/src/cmd/audio/zuke/zuke.c
+@@ -88,6 +88,7 @@
+ static char *cols = "AatD";
+ static int colspath;
+ static int *shuffle;
++static int repeatone;
+ static Rectangle seekbar;
+ static int seekmx, newseekmx = -1;
+ static double seekoff; /* ms */
+@@ -389,28 +390,32 @@
+ 	if(pcurplaying >= 0){
+ 		msec = byteswritten*1000/Bps;
+ 		if(dur > 0){
+-			snprint(tmp, sizeof(tmp), "%s%P/%P 100%%",
++			snprint(tmp, sizeof(tmp), "%s%s%P/%P 100%%",
++				repeatone != 0 ? "¹" : "",
+ 				shuffle != nil ? "∫ " : "",
+ 				dur/1000, dur/1000);
+ 			w = stringwidth(f, tmp);
+ 			msec = MIN(msec, dur);
+-			snprint(tmp, sizeof(tmp), "%s%P/%P %d%%",
++			snprint(tmp, sizeof(tmp), "%s%s%P/%P %d%%",
++				repeatone != 0 ? "¹" : "",
+ 				shuffle != nil ? "∫ " : "",
+ 				(uvlong)(newseekmx >= 0 ? seekoff : msec)/1000,
+ 				dur/1000, volume);
+ 		}else{
+-			snprint(tmp, sizeof(tmp), "%s%P %d%%",
++			snprint(tmp, sizeof(tmp), "%s%s%P %d%%",
++				repeatone != 0 ? "¹" : "",
+ 				shuffle != nil ? "∫ " : "",
+ 				msec/1000, 100);
+ 			w = stringwidth(f, tmp);
+-			snprint(tmp, sizeof(tmp), "%s%P %d%%",
++			snprint(tmp, sizeof(tmp), "%s%s%P %d%%",
++				repeatone != 0 ? "¹" : "",
+ 				shuffle != nil ? "∫ " : "",
+ 				msec/1000, volume);
+ 		}
+ 	}else{
+-		snprint(tmp, sizeof(tmp), "%s%d%%", shuffle != nil ? "∫ " : "", 100);
++		snprint(tmp, sizeof(tmp), "%s%s%d%%", repeatone != 0 ? "¹" : "",shuffle != nil ? "∫ " : "", 100);
+ 		w = stringwidth(f, tmp);
+-		snprint(tmp, sizeof(tmp), "%s%d%%", shuffle != nil ? "∫ " : "", volume);
++		snprint(tmp, sizeof(tmp), "%s%s%d%%", repeatone != 0 ? "¹" : "",shuffle != nil ? "∫ " : "", volume);
+ 	}
+ 	r = screen->r;
+ 	right = r.max.x - w - 4;
+@@ -708,8 +713,14 @@
+ 
+ 	while(1){
+ 		n = ioread(io, p[1], buf, Relbufsz);
+-		if(n <= 0)
++		if(n <= 0){
++			if(repeatone){
++				c = Cseekrel;
++				player->seek = -(Bps + boffset/Bps);	/* make sure */
++				goto again;
++			}
+ 			break;
++		}
+ 
+ 		thiscover = nil;
+ 		if(player->img != nil && nbrecv(player->img, &thiscover) != 0){
+@@ -729,6 +740,7 @@
+ 					goto stop;
+ 			}
+ 			if(c == Cseekrel){
++again:
+ 				boffset = MAX(0, boffset + player->seek*Bps);
+ 				n = 0;
+ 				break;
+@@ -1132,7 +1144,7 @@
+ 	f = display->defaultfont;
+ 	Scrollwidth = MAX(14, stringwidth(f, "#"));
+ 	Scrollheight = MAX(16, f->height);
+-	Coversz = MAX(64, stringwidth(f, "∫ 00:00:00/00:00:00 100%"));
++	Coversz = MAX(64, stringwidth(f, "¹∫ 00:00:00/00:00:00 100%"));
+ 	unlockdisplay(display);
+ 	display->locking = 1;
+ 	if((mctl = initmouse(nil, screen)) == nil)
+@@ -1339,7 +1351,11 @@
+ 			case 's':
+ 				toggleshuffle();
+ 				recenter();
+-				redraw(1);
++				redraw(playercurr == nil ? 1 : 0);
++				break;
++			case 'r':
++				repeatone ^= 1;
++				redraw(playercurr == nil ? 1 : 0);
+ 				break;
+ 			case 'c':
+ 			case 'p':

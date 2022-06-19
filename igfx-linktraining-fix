@@ -1,0 +1,161 @@
+diff 990ceeef3bfd9d56e2e6dd39cf5ac185b1a2de08 uncommitted
+--- a/sys/src/cmd/aux/vga/igfx.c
++++ b/sys/src/cmd/aux/vga/igfx.c
+@@ -1133,8 +1133,6 @@
+ 
+ 	if((val = dbattr(m->attr, "display")) != nil){
+ 		port = atoi(val)-1;
+-		if(igfx->type == TypeHSW && !igfx->dp[port-PortDPA].hdmi)
+-			bpc = 6;
+ 	}else if(dbattr(m->attr, "lcd") != nil)
+ 		port = PortLCD;
+ 	else
+@@ -1217,7 +1215,7 @@
+ 			/* displayport SST mode */
+ 			r->v &= ~(1<<27);
+ 			/* link not in training, send normal pixels */
+-			r->v |= 3<<8;
++			r->v &= ~(7<<8);	/* enable with pat1 armed */
+ 			if(igfx->dp[port-PortDPA].hdmi){
+ 				/* hdmi: do not configure displayport */
+ 				r->a = 0;
+@@ -1434,6 +1432,20 @@
+ 		sleep(5);
+ 	}
+ 
++	/* program plane */
++	loadreg(igfx, p->dsp->cntr);
++	loadreg(igfx, p->dsp->linoff);
++	loadreg(igfx, p->dsp->stride);
++	loadreg(igfx, p->dsp->tileoff);
++	loadreg(igfx, p->dsp->size);
++	loadreg(igfx, p->dsp->pos);
++	loadreg(igfx, p->dsp->surf);	/* arm */
++	loadreg(igfx, p->dsp->leftsurf);
++
++	/* enable planes */
++		p->conf.v &= ~(3<<18);
++		loadreg(igfx, p->conf);
++
+ 	/* image size (vga needs to be off) */
+ 	loadreg(igfx, p->src);
+ 
+@@ -1451,27 +1463,11 @@
+ 	/* enable cpu pipe */
+ 	loadtrans(igfx, p);
+ 
+-	/* program plane */
+-	loadreg(igfx, p->dsp->cntr);
+-	loadreg(igfx, p->dsp->linoff);
+-	loadreg(igfx, p->dsp->stride);
+-	loadreg(igfx, p->dsp->tileoff);
+-	loadreg(igfx, p->dsp->size);
+-	loadreg(igfx, p->dsp->pos);
+-	loadreg(igfx, p->dsp->surf);	/* arm */
+-	loadreg(igfx, p->dsp->leftsurf);
+-
+ 	/* program cursor */
+ 	loadreg(igfx, p->cur->cntr);
+ 	loadreg(igfx, p->cur->pos);
+ 	loadreg(igfx, p->cur->base);	/* arm */
+ 
+-	/* enable planes */
+-	if(igfx->type == TypeG45) {
+-		p->conf.v &= ~(3<<18);
+-		loadreg(igfx, p->conf);
+-	}
+-
+ 	if(p->fdi->rxctl.a != 0){
+ 		/* enable fdi */
+ 		loadreg(igfx, p->fdi->rxtu[1]);
+@@ -1755,7 +1751,6 @@
+ 		wr(igfx, igfx->pipe[0].dsp->surf.a, 0);		/* arm */
+ 		csr(igfx, igfx->pipe[0].conf.a, 0, 3<<18);
+ 	}
+-
+ 	if(igfx->type == TypeHSW){
+ 		/* deselect port clock */
+ 		for(x=0; x<nelem(igfx->dpllsel); x++)
+@@ -1782,6 +1777,22 @@
+ 	for(x=0; x<nelem(igfx->dpllsel); x++)
+ 		loadreg(igfx, igfx->dpllsel[x]);
+ 
++	for(x = 0; x < nelem(igfx->dp); x++){
++		if(igfx->dp[x].ctl.a == 0 || (igfx->dp[x].ctl.v & 1<<31) == 0)
++			continue;
++		igfx->dp[x].ctl.v &= ~(7<<8);		/* arm pattern 1 */
++		loadreg(igfx, igfx->dp[x].ctl);
++		for(y=0; y<nelem(igfx->dp[x].buftrans); y++)
++			loadreg(igfx, igfx->dp[x].buftrans[y]);
++		sleep(100);
++		loadreg(igfx, igfx->dp[x].bufctl);
++		sleep(500);
++		if(enabledp(igfx, &igfx->dp[x]) < 0)
++			ctlr->flag |= Ferror;
++		igfx->dp[x].ctl.v |= 3<<8;
++		loadreg(igfx, igfx->dp[x].ctl);
++	}
++
+ 	/* program all pipes */
+ 	for(x = 0; x < igfx->npipe; x++)
+ 		enablepipe(igfx, x);
+@@ -1793,13 +1804,6 @@
+ 	loadreg(igfx, igfx->adpa);
+ 	loadreg(igfx, igfx->sdvob);
+ 	loadreg(igfx, igfx->sdvoc);
+-	for(x = 0; x < nelem(igfx->dp); x++){
+-		for(y=0; y<nelem(igfx->dp[x].buftrans); y++)
+-			loadreg(igfx, igfx->dp[x].buftrans[y]);
+-		loadreg(igfx, igfx->dp[x].bufctl);
+-		if(enabledp(igfx, &igfx->dp[x]) < 0)
+-			ctlr->flag |= Ferror;
+-	}
+ 
+ 	/* program lcd power */
+ 	loadreg(igfx, igfx->ppcontrol);
+@@ -2138,7 +2142,7 @@
+ 	buf[1] = addr >> 8;
+ 	buf[2] = addr;
+ 	buf[3] = len-1;
+-	r = 3;	
++	r = 3;
+ 	if(data != nil && len > 0){
+ 		if((cmd & CmdRead) == 0)
+ 			memmove(buf+4, data, len);
+@@ -2188,13 +2192,13 @@
+ 	if((dp->ctl.v & (1<<31)) == 0)
+ 		return 0;
+ 
+-	/* FIXME: always times out */
+-	if(igfx->type == TypeHSW && dp == &igfx->dp[0])
+-		goto Skip;
+-
++	int try2 = 0;
+ 	/* Link configuration */
+-	wdpaux(igfx, dp, 0x100, (270*MHz) / 27000000);
+-	w = dp->ctl.v >> (igfx->type == TypeHSW ? 1 : 19) & 7;
++	while(try2 < 32 && wdpaux(igfx, dp, 0x100, (270*MHz) / 27000000) < 0){
++		try2++;
++		sleep(100);
++	}
++	w = dp->bufctl.v >> (igfx->type == TypeHSW ? 1 : 19) & 7;
+ 	wdpaux(igfx, dp, 0x101, w+1);
+ 
+ 	r = 0;
+@@ -2244,11 +2248,12 @@
+ 				break;
+ 		}
+ 	}
+-Skip:
+ 	/* stop training */
+-	dp->ctl.v &= ~(7<<8);
+-	dp->ctl.v |= 3<<8;
+-	loadreg(igfx, dp->ctl);
++	if(dp != &igfx->dp[0]){			// eDP: done later
++		dp->ctl.v &= ~(7<<8);
++		dp->ctl.v |= 3<<8;
++		loadreg(igfx, dp->ctl);
++	}
+ 	wdpaux(igfx, dp, 0x102, 0x00);
+ 	return 1;
+ 

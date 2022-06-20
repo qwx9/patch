@@ -1,4 +1,4 @@
-diff f0fc84aba3a40557539e7c014454b916a101759d uncommitted
+diff 7ca997bf7efdca16416b22488ebc7b70c419fd44 uncommitted
 --- a/sys/src/cmd/aux/vga/igfx.c
 +++ b/sys/src/cmd/aux/vga/igfx.c
 @@ -1090,8 +1090,6 @@
@@ -33,7 +33,7 @@ diff f0fc84aba3a40557539e7c014454b916a101759d uncommitted
  			if(igfx->dp[port-PortDPA].hdmi){
  				/* hdmi: do not configure displayport */
  				r->a = 0;
-@@ -1556,12 +1553,11 @@
+@@ -1556,9 +1553,6 @@
  {
  	int i;
  
@@ -43,12 +43,7 @@ diff f0fc84aba3a40557539e7c014454b916a101759d uncommitted
  	/* disable displayport transcoder */
  	if(igfx->type == TypeHSW){
  		csr(igfx, t->dpctl.a, 15<<28, 0);
-+		csr(igfx, t->dpctl.a, 0, 1<<31);	/* workaround */
-+		csr(igfx, t->dpctl.a, 1<<31, 0);
- 		csr(igfx, t->ht.a, ~0, 0);
- 		csr(igfx, t->hb.a, ~0, 0);
- 		csr(igfx, t->hs.a, ~0, 0);
-@@ -1582,6 +1578,9 @@
+@@ -1582,6 +1576,9 @@
  	/* workaround: clear timing override bit */
  	csr(igfx, t->chicken.a, 1<<31, 0);
  
@@ -58,7 +53,17 @@ diff f0fc84aba3a40557539e7c014454b916a101759d uncommitted
  	/* disable dpll  */
  	if(igfx->type != TypeHSW && t->dpll != nil)
  		csr(igfx, t->dpll->ctrl.a, 1<<31, 0);
-@@ -1781,6 +1780,7 @@
+@@ -1766,6 +1763,9 @@
+ 			csr(igfx, igfx->dpll[x].ctrl.a, 1<<31, 0);
+ 	}
+ 
++	/* program lcd power */
++	loadreg(igfx, igfx->ppcontrol);
++
+ 	/* program new clock sources */
+ 	loadreg(igfx, igfx->rawclkfreq);
+ 	loadreg(igfx, igfx->drefctl);
+@@ -1781,6 +1781,7 @@
  	/* new dpll setting */
  	for(x=0; x<nelem(igfx->dpllsel); x++)
  		loadreg(igfx, igfx->dpllsel[x]);
@@ -66,31 +71,36 @@ diff f0fc84aba3a40557539e7c014454b916a101759d uncommitted
  
  	/* program all pipes */
  	for(x = 0; x < igfx->npipe; x++)
-@@ -1794,11 +1794,23 @@
+@@ -1794,16 +1795,25 @@
  	loadreg(igfx, igfx->sdvob);
  	loadreg(igfx, igfx->sdvoc);
  	for(x = 0; x < nelem(igfx->dp); x++){
 +		if((igfx->dp[x].ctl.a == 0 || (igfx->dp[x].ctl.v & 1<<31) == 0) && !igfx->dp[x].hdmi)
 +			continue;
 +		if(!igfx->dp[x].hdmi){
-+			igfx->dp[x].ctl.v &= ~(7<<8);		/* arm pattern 1 */
++			igfx->dp[x].ctl.v &= ~(7<<8);	/* arm pattern 1 */
 +			loadreg(igfx, igfx->dp[x].ctl);
 +		}
  		for(y=0; y<nelem(igfx->dp[x].buftrans); y++)
  			loadreg(igfx, igfx->dp[x].buftrans[y]);
-+		sleep(500);
++		sleep(100);
  		loadreg(igfx, igfx->dp[x].bufctl);
-+		sleep(1000);
++		sleep(500);	/* needs to take a breath before training */
  		if(enabledp(igfx, &igfx->dp[x]) < 0)
  			ctlr->flag |= Ferror;
 +		if(!igfx->dp[x].hdmi){
-+			igfx->dp[x].ctl.v |= 3<<8;		/* send normal pixels */
++			igfx->dp[x].ctl.v |= 3<<8;	/* send normal pixels */
 +			loadreg(igfx, igfx->dp[x].ctl);
 +		}
  	}
  
- 	/* program lcd power */
-@@ -2138,7 +2150,7 @@
+-	/* program lcd power */
+-	loadreg(igfx, igfx->ppcontrol);
+-
+ 	ctlr->flag |= Fload;
+ }
+ 
+@@ -2138,7 +2148,7 @@
  	buf[1] = addr >> 8;
  	buf[2] = addr;
  	buf[3] = len-1;
@@ -99,7 +109,7 @@ diff f0fc84aba3a40557539e7c014454b916a101759d uncommitted
  	if(data != nil && len > 0){
  		if((cmd & CmdRead) == 0)
  			memmove(buf+4, data, len);
-@@ -2188,13 +2200,13 @@
+@@ -2188,13 +2198,13 @@
  	if((dp->ctl.v & (1<<31)) == 0)
  		return 0;
  
@@ -107,19 +117,19 @@ diff f0fc84aba3a40557539e7c014454b916a101759d uncommitted
 -	if(igfx->type == TypeHSW && dp == &igfx->dp[0])
 -		goto Skip;
 -
-+	int try2 = 0;
  	/* Link configuration */
 -	wdpaux(igfx, dp, 0x100, (270*MHz) / 27000000);
 -	w = dp->ctl.v >> (igfx->type == TypeHSW ? 1 : 19) & 7;
-+	while(try2 < 32 && wdpaux(igfx, dp, 0x100, (270*MHz) / 27000000) < 0){
-+		try2++;
-+		sleep(100);
-+	}
++	for(try=0; try<30; try++)
++		if(wdpaux(igfx, dp, 0x100, (270*MHz) / 27000000) >= 0)
++			break;
++	if(try >= 30)
++		trace("can\'t start training\n");
 +	w = dp->bufctl.v >> (igfx->type == TypeHSW ? 1 : 19) & 7;
  	wdpaux(igfx, dp, 0x101, w+1);
  
  	r = 0;
-@@ -2244,12 +2256,10 @@
+@@ -2244,11 +2254,8 @@
  				break;
  		}
  	}
@@ -130,7 +140,5 @@ diff f0fc84aba3a40557539e7c014454b916a101759d uncommitted
 -	dp->ctl.v |= 3<<8;
 -	loadreg(igfx, dp->ctl);
  	wdpaux(igfx, dp, 0x102, 0x00);
-+	fprint(2, "ctl %08#p a %08#ux v %08#ux\n", &dp->ctl, dp->ctl.a, dp->ctl.v);
  	return 1;
  
- Fail:

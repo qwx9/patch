@@ -1,7 +1,16 @@
-diff 990ceeef3bfd9d56e2e6dd39cf5ac185b1a2de08 uncommitted
+diff f0fc84aba3a40557539e7c014454b916a101759d uncommitted
 --- a/sys/src/cmd/aux/vga/igfx.c
 +++ b/sys/src/cmd/aux/vga/igfx.c
-@@ -1133,8 +1133,6 @@
+@@ -1090,8 +1090,6 @@
+ 	if(m->z != 32)
+ 		error("%s: unsupported color depth %d\n", ctlr->name, m->z);
+ 
+-	bpc = 8;	/* bits per color channel */
+-
+ 	igfx = vga->private;
+ 
+ 	/* disable vga */
+@@ -1133,12 +1131,11 @@
  
  	if((val = dbattr(m->attr, "display")) != nil){
  		port = atoi(val)-1;
@@ -10,7 +19,12 @@ diff 990ceeef3bfd9d56e2e6dd39cf5ac185b1a2de08 uncommitted
  	}else if(dbattr(m->attr, "lcd") != nil)
  		port = PortLCD;
  	else
-@@ -1217,7 +1215,7 @@
+ 		port = PortVGA;
++	bpc = 8;	/* bits per color channel */
+ 
+ 	trace("%s: display #%d\n", ctlr->name, port+1);
+ 
+@@ -1217,7 +1214,7 @@
  			/* displayport SST mode */
  			r->v &= ~(1<<27);
  			/* link not in training, send normal pixels */
@@ -19,101 +33,64 @@ diff 990ceeef3bfd9d56e2e6dd39cf5ac185b1a2de08 uncommitted
  			if(igfx->dp[port-PortDPA].hdmi){
  				/* hdmi: do not configure displayport */
  				r->a = 0;
-@@ -1434,6 +1432,20 @@
- 		sleep(5);
- 	}
+@@ -1556,12 +1553,11 @@
+ {
+ 	int i;
  
-+	/* program plane */
-+	loadreg(igfx, p->dsp->cntr);
-+	loadreg(igfx, p->dsp->linoff);
-+	loadreg(igfx, p->dsp->stride);
-+	loadreg(igfx, p->dsp->tileoff);
-+	loadreg(igfx, p->dsp->size);
-+	loadreg(igfx, p->dsp->pos);
-+	loadreg(igfx, p->dsp->surf);	/* arm */
-+	loadreg(igfx, p->dsp->leftsurf);
-+
-+	/* enable planes */
-+		p->conf.v &= ~(3<<18);
-+		loadreg(igfx, p->conf);
-+
- 	/* image size (vga needs to be off) */
- 	loadreg(igfx, p->src);
- 
-@@ -1451,27 +1463,11 @@
- 	/* enable cpu pipe */
- 	loadtrans(igfx, p);
- 
--	/* program plane */
--	loadreg(igfx, p->dsp->cntr);
--	loadreg(igfx, p->dsp->linoff);
--	loadreg(igfx, p->dsp->stride);
--	loadreg(igfx, p->dsp->tileoff);
--	loadreg(igfx, p->dsp->size);
--	loadreg(igfx, p->dsp->pos);
--	loadreg(igfx, p->dsp->surf);	/* arm */
--	loadreg(igfx, p->dsp->leftsurf);
+-	/* deselect pipe clock */
+-	csr(igfx, t->clksel.a, 7<<29, 0);
 -
- 	/* program cursor */
- 	loadreg(igfx, p->cur->cntr);
- 	loadreg(igfx, p->cur->pos);
- 	loadreg(igfx, p->cur->base);	/* arm */
- 
--	/* enable planes */
--	if(igfx->type == TypeG45) {
--		p->conf.v &= ~(3<<18);
--		loadreg(igfx, p->conf);
--	}
--
- 	if(p->fdi->rxctl.a != 0){
- 		/* enable fdi */
- 		loadreg(igfx, p->fdi->rxtu[1]);
-@@ -1755,7 +1751,6 @@
- 		wr(igfx, igfx->pipe[0].dsp->surf.a, 0);		/* arm */
- 		csr(igfx, igfx->pipe[0].conf.a, 0, 3<<18);
- 	}
--
+ 	/* disable displayport transcoder */
  	if(igfx->type == TypeHSW){
- 		/* deselect port clock */
- 		for(x=0; x<nelem(igfx->dpllsel); x++)
-@@ -1782,6 +1777,22 @@
+ 		csr(igfx, t->dpctl.a, 15<<28, 0);
++		csr(igfx, t->dpctl.a, 0, 1<<31);	/* workaround */
++		csr(igfx, t->dpctl.a, 1<<31, 0);
+ 		csr(igfx, t->ht.a, ~0, 0);
+ 		csr(igfx, t->hb.a, ~0, 0);
+ 		csr(igfx, t->hs.a, ~0, 0);
+@@ -1582,6 +1578,9 @@
+ 	/* workaround: clear timing override bit */
+ 	csr(igfx, t->chicken.a, 1<<31, 0);
+ 
++	/* deselect pipe clock */
++	csr(igfx, t->clksel.a, 7<<29, 0);
++
+ 	/* disable dpll  */
+ 	if(igfx->type != TypeHSW && t->dpll != nil)
+ 		csr(igfx, t->dpll->ctrl.a, 1<<31, 0);
+@@ -1781,6 +1780,7 @@
+ 	/* new dpll setting */
  	for(x=0; x<nelem(igfx->dpllsel); x++)
  		loadreg(igfx, igfx->dpllsel[x]);
++	sleep(10);
  
-+	for(x = 0; x < nelem(igfx->dp); x++){
-+		if(igfx->dp[x].ctl.a == 0 || (igfx->dp[x].ctl.v & 1<<31) == 0)
-+			continue;
-+		igfx->dp[x].ctl.v &= ~(7<<8);		/* arm pattern 1 */
-+		loadreg(igfx, igfx->dp[x].ctl);
-+		for(y=0; y<nelem(igfx->dp[x].buftrans); y++)
-+			loadreg(igfx, igfx->dp[x].buftrans[y]);
-+		sleep(100);
-+		loadreg(igfx, igfx->dp[x].bufctl);
-+		sleep(500);
-+		if(enabledp(igfx, &igfx->dp[x]) < 0)
-+			ctlr->flag |= Ferror;
-+		igfx->dp[x].ctl.v |= 3<<8;
-+		loadreg(igfx, igfx->dp[x].ctl);
-+	}
-+
  	/* program all pipes */
  	for(x = 0; x < igfx->npipe; x++)
- 		enablepipe(igfx, x);
-@@ -1793,13 +1804,6 @@
- 	loadreg(igfx, igfx->adpa);
+@@ -1794,11 +1794,23 @@
  	loadreg(igfx, igfx->sdvob);
  	loadreg(igfx, igfx->sdvoc);
--	for(x = 0; x < nelem(igfx->dp); x++){
--		for(y=0; y<nelem(igfx->dp[x].buftrans); y++)
--			loadreg(igfx, igfx->dp[x].buftrans[y]);
--		loadreg(igfx, igfx->dp[x].bufctl);
--		if(enabledp(igfx, &igfx->dp[x]) < 0)
--			ctlr->flag |= Ferror;
--	}
+ 	for(x = 0; x < nelem(igfx->dp); x++){
++		if((igfx->dp[x].ctl.a == 0 || (igfx->dp[x].ctl.v & 1<<31) == 0) && !igfx->dp[x].hdmi)
++			continue;
++		if(!igfx->dp[x].hdmi){
++			igfx->dp[x].ctl.v &= ~(7<<8);		/* arm pattern 1 */
++			loadreg(igfx, igfx->dp[x].ctl);
++		}
+ 		for(y=0; y<nelem(igfx->dp[x].buftrans); y++)
+ 			loadreg(igfx, igfx->dp[x].buftrans[y]);
++		sleep(500);
+ 		loadreg(igfx, igfx->dp[x].bufctl);
++		sleep(1000);
+ 		if(enabledp(igfx, &igfx->dp[x]) < 0)
+ 			ctlr->flag |= Ferror;
++		if(!igfx->dp[x].hdmi){
++			igfx->dp[x].ctl.v |= 3<<8;		/* send normal pixels */
++			loadreg(igfx, igfx->dp[x].ctl);
++		}
+ 	}
  
  	/* program lcd power */
- 	loadreg(igfx, igfx->ppcontrol);
-@@ -2138,7 +2142,7 @@
+@@ -2138,7 +2150,7 @@
  	buf[1] = addr >> 8;
  	buf[2] = addr;
  	buf[3] = len-1;
@@ -122,7 +99,7 @@ diff 990ceeef3bfd9d56e2e6dd39cf5ac185b1a2de08 uncommitted
  	if(data != nil && len > 0){
  		if((cmd & CmdRead) == 0)
  			memmove(buf+4, data, len);
-@@ -2188,13 +2192,13 @@
+@@ -2188,13 +2200,13 @@
  	if((dp->ctl.v & (1<<31)) == 0)
  		return 0;
  
@@ -142,20 +119,18 @@ diff 990ceeef3bfd9d56e2e6dd39cf5ac185b1a2de08 uncommitted
  	wdpaux(igfx, dp, 0x101, w+1);
  
  	r = 0;
-@@ -2244,11 +2248,12 @@
+@@ -2244,12 +2256,10 @@
  				break;
  		}
  	}
 -Skip:
++
  	/* stop training */
 -	dp->ctl.v &= ~(7<<8);
 -	dp->ctl.v |= 3<<8;
 -	loadreg(igfx, dp->ctl);
-+	if(dp != &igfx->dp[0]){			// eDP: done later
-+		dp->ctl.v &= ~(7<<8);
-+		dp->ctl.v |= 3<<8;
-+		loadreg(igfx, dp->ctl);
-+	}
  	wdpaux(igfx, dp, 0x102, 0x00);
++	fprint(2, "ctl %08#p a %08#ux v %08#ux\n", &dp->ctl, dp->ctl.a, dp->ctl.v);
  	return 1;
  
+ Fail:

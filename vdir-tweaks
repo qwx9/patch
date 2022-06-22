@@ -196,7 +196,7 @@ diff 663d1a8c4432f3cef70466c04699fb6ebaafbc22 uncommitted
 +};
 --- a/vdir.c
 +++ b/vdir.c
-@@ -20,6 +20,12 @@
+@@ -20,6 +20,13 @@
  	Slowscroll = 10,
  };
  
@@ -204,12 +204,13 @@ diff 663d1a8c4432f3cef70466c04699fb6ebaafbc22 uncommitted
 +	Nback = 64,
 +};
 +char *backlist[Nback];
++int backoff[Nback];
 +int backp = -1;
 +
  enum
  {
  	Emouse,
-@@ -47,6 +53,8 @@
+@@ -47,6 +54,8 @@
  Rectangle homer;
  Rectangle upr;
  Rectangle cdr;
@@ -218,7 +219,7 @@ diff 663d1a8c4432f3cef70466c04699fb6ebaafbc22 uncommitted
  Rectangle newdirr;
  Rectangle newfiler;
  Rectangle viewr;
-@@ -60,6 +68,8 @@
+@@ -60,6 +69,8 @@
  Image *iup;
  Image *inewfile;
  Image *inewfolder;
@@ -227,7 +228,7 @@ diff 663d1a8c4432f3cef70466c04699fb6ebaafbc22 uncommitted
  Image *toolbg;
  Image *toolfg;
  Image *viewbg;
-@@ -68,6 +78,7 @@
+@@ -68,6 +79,7 @@
  Image *selfg;
  Image *scrollbg;
  Image *scrollfg;
@@ -235,7 +236,31 @@ diff 663d1a8c4432f3cef70466c04699fb6ebaafbc22 uncommitted
  int sizew;
  int lineh;
  int nlines;
-@@ -146,8 +157,38 @@
+@@ -121,8 +133,10 @@
+ 	return 1;
+ }
+ 
++int	scrollclamp(int);
++
+ void
+-loaddirs(void)
++loaddirs(int fixoff)
+ {
+ 	int fd, i, m;
+ 
+@@ -135,7 +149,10 @@
+ 		free(dirs);
+ 	ndirs = dirreadall(fd, &dirs);
+ 	qsort(dirs, ndirs, sizeof *dirs, (int(*)(void*,void*))dircmp);
+-	offset = 0;
++	if(!fixoff)
++		scrollclamp(offset);
++	else
++		offset = 0;
+ 	close(fd);
+ 	m = 1;
+ 	for(i=0; i < ndirs; i++){
+@@ -146,10 +163,43 @@
  }
  
  void
@@ -249,6 +274,7 @@ diff 663d1a8c4432f3cef70466c04699fb6ebaafbc22 uncommitted
 +		backp++;
 +	if((backlist[backp] = strdup(path)) == nil)
 +		sysfatal("strdup: %r");
++	backoff[backp] = offset;
 +}
 +
 +int
@@ -258,12 +284,14 @@ diff 663d1a8c4432f3cef70466c04699fb6ebaafbc22 uncommitted
 +
 +	if(backp < 0)
 +		return 0;
++	offset = backoff[backp];
++	backoff[backp] = 0;
 +	p = backlist[backp];
 +	backlist[backp] = nil;
 +	backp--;
 +	strecpy(path, path+sizeof path, p);
 +	free(p);
-+	loaddirs();
++	loaddirs(0);
 +	return 1;
 +}
 +
@@ -272,9 +300,12 @@ diff 663d1a8c4432f3cef70466c04699fb6ebaafbc22 uncommitted
  {
 +	pushback();
  	snprint(path, sizeof path, abspath(path, ".."));
- 	loaddirs();
+-	loaddirs();
++	loaddirs(1);
  }
-@@ -157,6 +198,7 @@
+ 
+ void
+@@ -157,6 +207,7 @@
  {
  	char newpath[256] = {0};
  
@@ -282,7 +313,48 @@ diff 663d1a8c4432f3cef70466c04699fb6ebaafbc22 uncommitted
  	if(dir == nil)
  		snprint(newpath, sizeof path, home);
  	else if(dir[0] == '/')
-@@ -273,7 +315,7 @@
+@@ -167,7 +218,7 @@
+ 		showerrstr("Directory does not exist");
+ 	else
+ 		snprint(path, sizeof path, abspath(path, newpath));
+-	loaddirs();
++	loaddirs(1);
+ }
+ 
+ void
+@@ -187,7 +238,7 @@
+ 		goto cleanup;
+ 	}
+ 	close(fd);
+-	loaddirs();
++	loaddirs(0);
+ cleanup:
+ 	free(p);
+ }
+@@ -209,7 +260,7 @@
+ 		goto cleanup;
+ 	}
+ 	close(fd);
+-	loaddirs();
++	loaddirs(0);
+ cleanup:
+ 	free(p);
+ }
+@@ -257,7 +308,7 @@
+ 	if(doexec(cmd) < 0)
+ 		showerrstr("Cannot remove file/directory");
+ 	else
+-		loaddirs();
++		loaddirs(0);
+ }
+ 
+ void
+@@ -269,11 +320,11 @@
+ 	if(doexec(cmd) < 0)
+ 		showerrstr("Cannot rename file/directory");
+ 	else
+-		loaddirs();
++		loaddirs(0);
  }
  
  int
@@ -291,7 +363,7 @@ diff 663d1a8c4432f3cef70466c04699fb6ebaafbc22 uncommitted
  {
  	char *f;
  	int e;
-@@ -280,9 +322,12 @@
+@@ -280,11 +331,14 @@
  
  	f = smprint("%s/%s", path, name);
  	e = access(f, 0)==0;
@@ -305,9 +377,12 @@ diff 663d1a8c4432f3cef70466c04699fb6ebaafbc22 uncommitted
 +			plumbsendtext(plumbfd, "vdir", nil, path, name);
 +	}else{
  		alert("Error", "File does not exist anymore", nil, mctl, kctl);
- 		loaddirs();
+-		loaddirs();
++		loaddirs(0);
  		redraw();
-@@ -346,6 +391,8 @@
+ 	}
+ 	free(f);
+@@ -346,6 +400,8 @@
  	iup    = loadicon(big, updata, sizeof updata);
  	inewfile = loadicon(big, newfiledata, sizeof newfiledata);
  	inewfolder = loadicon(big, newfolderdata, sizeof newfolderdata);
@@ -316,7 +391,7 @@ diff 663d1a8c4432f3cef70466c04699fb6ebaafbc22 uncommitted
  }
  
  char*
-@@ -366,7 +413,7 @@
+@@ -366,7 +422,7 @@
  
  	p->x += Toolpadding;
  	r = Rect(p->x, p->y, p->x+16, p->y+16);
@@ -325,7 +400,7 @@ diff 663d1a8c4432f3cef70466c04699fb6ebaafbc22 uncommitted
  	p->x += 16+Toolpadding;
  	return r;
  }
-@@ -379,12 +426,12 @@
+@@ -379,12 +435,12 @@
  
  	s = t;
  	if(*s && (p.x+stringwidth(font, s)) > n){
@@ -340,7 +415,7 @@ diff 663d1a8c4432f3cef70466c04699fb6ebaafbc22 uncommitted
  	}
  	return p;
  }
-@@ -407,7 +454,7 @@
+@@ -407,7 +463,7 @@
  	p = addpt(viewr.min, Pt(Toolpadding, Toolpadding));
  	p.y += n*lineh;
  	r = Rpt(p, addpt(p, Pt(Dx(viewr)-2*Toolpadding, lineh)));
@@ -349,7 +424,7 @@ diff 663d1a8c4432f3cef70466c04699fb6ebaafbc22 uncommitted
  	t = mdate(d);
  	snprint(buf, sizeof buf, "%*lld  %s", sizew, d.length, t);
  	free(t);
-@@ -414,12 +461,12 @@
+@@ -414,12 +470,12 @@
  	img = (d.qid.type&QTDIR) ? folder : file;
  	p.y -= Padding;
  	dy = (lineh-12)/2;
@@ -364,7 +439,7 @@ diff 663d1a8c4432f3cef70466c04699fb6ebaafbc22 uncommitted
  }
  
  void
-@@ -440,22 +487,25 @@
+@@ -440,22 +496,25 @@
  	Point p;
  	int i, h, y;
  
@@ -398,7 +473,7 @@ diff 663d1a8c4432f3cef70466c04699fb6ebaafbc22 uncommitted
  	if(ndirs>0){
  		h = ((double)nlines/ndirs)*Dy(scrollr);
  		y = ((double)offset/ndirs)*Dy(scrollr);
-@@ -462,10 +512,11 @@
+@@ -462,10 +521,11 @@
  		scrposr = Rect(scrollr.min.x, scrollr.min.y+y, scrollr.max.x-1, scrollr.min.y+y+h);
  	}else
  		scrposr = Rect(scrollr.min.x, scrollr.min.y, scrollr.max.x-1, scrollr.max.y);
@@ -411,7 +486,7 @@ diff 663d1a8c4432f3cef70466c04699fb6ebaafbc22 uncommitted
  	flushimage(display, 1);
  }
  
-@@ -506,18 +557,42 @@
+@@ -506,18 +566,42 @@
  }
  
  void
@@ -457,12 +532,12 @@ diff 663d1a8c4432f3cef70466c04699fb6ebaafbc22 uncommitted
  	viewr.min.x += Scrollwidth;
  	viewr.min.y = toolr.max.y+1;
  	nlines = Dy(viewr)/lineh;
-@@ -542,13 +617,21 @@
+@@ -542,13 +626,21 @@
  		cd(nil);
  		redraw();
  		break;
 +	case Kesc:
-+		loaddirs();
++		loaddirs(0);
 +		redraw();
 +		break;
  	case Kup:
@@ -481,7 +556,7 @@ diff 663d1a8c4432f3cef70466c04699fb6ebaafbc22 uncommitted
  	}
  }
  
-@@ -557,9 +640,8 @@
+@@ -557,9 +649,8 @@
  {
  	Point p;
  
@@ -493,7 +568,7 @@ diff 663d1a8c4432f3cef70466c04699fb6ebaafbc22 uncommitted
  	return p;
  }
  
-@@ -579,63 +661,36 @@
+@@ -579,63 +670,36 @@
  void
  evtmouse(Mouse m)
  {
@@ -555,7 +630,7 @@ diff 663d1a8c4432f3cef70466c04699fb6ebaafbc22 uncommitted
  			redraw();
 -		}else if(ptinrect(m.xy, cdr)){
 +		}else if(ptinrect(m.xy, refr)){
-+			loaddirs();
++			loaddirs(0);
 +			redraw();
 +		}else if(ptinrect(m.xy, backr)){
 +			if(back())
@@ -571,7 +646,7 @@ diff 663d1a8c4432f3cef70466c04699fb6ebaafbc22 uncommitted
  		}else if(ptinrect(m.xy, newdirr)){
  			m.xy = cept("Create directory");
  			if(enter("Create directory", buf, sizeof buf, mctl, kctl, nil)>0){
-@@ -656,10 +711,39 @@
+@@ -656,11 +720,40 @@
  			if(d.qid.type & QTDIR){
  				cd(d.name);
  				redraw();
@@ -579,7 +654,7 @@ diff 663d1a8c4432f3cef70466c04699fb6ebaafbc22 uncommitted
 -				if(plumbfile(path, d.name))
 -					flash(n);
  			}
-+		}
+ 		}
 +	}else if(m.buttons&2 && oldbuttons == 0){
 +		if(ptinrect(m.xy, viewr)){
 +			n = indexat(m.xy);
@@ -611,6 +686,16 @@ diff 663d1a8c4432f3cef70466c04699fb6ebaafbc22 uncommitted
 +			d = dirs[offset+n];
 +			if(plumbfile(path, d.name, d.qid.type & QTDIR))
 +				flash(n);
- 		}
++		}
  	}else if(m.buttons&8)
  		scrollup(Slowscroll);
+ 	else if(m.buttons&16)
+@@ -736,7 +829,7 @@
+ 	alts[Eresize].c = mctl->resizec;
+ 	alts[Ekeyboard].c = kctl->c;
+ 	readhome();
+-	loaddirs();
++	loaddirs(1);
+ 	initcolors();
+ 	initimages();
+ 	evtresize();

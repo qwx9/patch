@@ -1,15 +1,104 @@
 diff 663d1a8c4432f3cef70466c04699fb6ebaafbc22 uncommitted
 --- a/alert.c
 +++ b/alert.c
-@@ -62,7 +62,7 @@
- 		o = addpt(screen->r.min, Pt((Dx(screen->r)-w)/2, (Dy(screen->r)-h)/2));
- 		r = Rect(o.x, o.y, o.x+w, o.y+h);
- 		if(save==nil){
+@@ -19,11 +19,11 @@
+ alert(const char *title, const char *message, const char *err, Mousectl *mctl, Keyboardctl *kctl)
+ {
+ 	Alt alts[3];
+-	Rectangle r, sc;
++	Rectangle r;
+ 	Point o, p;
+-	Image *b, *save, *bg, *fg;
++	Image *bg, *fg;
+ 	Font *tf, *mf;
+-	int done, h, w, tw, mw, ew;
++	int i, h, w, tw, mw, ew;
+ 	Mouse m;
+ 	Rune k;
+ 
+@@ -46,8 +46,6 @@
+ 	mf = openfont(display, Messagefont);
+ 	if(mf==nil)
+ 		sysfatal("openfont: %r");
+-	done = 0;
+-	save = nil;
+ 	h = Padding+tf->height+mf->height+Padding;
+ 	if(err != nil)
+ 		h += mf->height;
+@@ -55,56 +53,25 @@
+ 	mw = stringwidth(mf, message);
+ 	ew = err != nil ? stringwidth(mf, err) : 0;
+ 	w = Padding+max(tw, max(mw, ew))+Padding;
+-	b = screen;
+-	sc = b->clipr;
+-	replclipr(b, 0, b->r);
+-	while(!done){
+-		o = addpt(screen->r.min, Pt((Dx(screen->r)-w)/2, (Dy(screen->r)-h)/2));
+-		r = Rect(o.x, o.y, o.x+w, o.y+h);
+-		if(save==nil){
 -			save = allocimage(display, r, b->chan, 0, DNofill);
-+			save = allocimage(display, r, screen->chan, 0, DNofill);
- 			if(save==nil)
- 				break;
- 			draw(save, r, b, nil, r.min);
+-			if(save==nil)
+-				break;
+-			draw(save, r, b, nil, r.min);
+-		}
+-		draw(b, r, bg, nil, ZP);
+-		border(b, r, 2, fg, ZP);
+-		p = addpt(o, Pt(Padding, Padding));
+-		string(b, p, fg, ZP, tf, title);
+-		p.y += tf->height;
+-		string(b, p, fg, ZP, mf, message);
+-		if(err != nil){
+-			p.x = o.x + Padding;
+-			p.y += mf->height;
+-			string(b, p, fg, ZP, mf, err);
+-		}
+-		flushimage(display, 1);
+-		if(b!=screen || !eqrect(screen->clipr, sc)){
+-			freeimage(save);
+-			save = nil;
+-		}
+-		b = screen;
+-		sc = b->clipr;
+-		replclipr(b, 0, b->r);
+-		switch(alt(alts)){
+-		default:
+-			continue;
++	o = addpt(screen->r.min, Pt((Dx(screen->r)-w)/2, (Dy(screen->r)-h)/2));
++	r = Rect(o.x, o.y, o.x+w, o.y+h);
++	draw(screen, r, bg, nil, ZP);
++	border(screen, r, 2, fg, ZP);
++	p = addpt(o, Pt(Padding, Padding));
++	string(screen, p, fg, ZP, tf, title);
++	p.y += tf->height;
++	string(screen, p, fg, ZP, mf, message);
++	if(err != nil){
++		p.x = o.x + Padding;
++		p.y += mf->height;
++		string(screen, p, fg, ZP, mf, err);
++	}
++	flushimage(display, 1);
++	for(;;){
++		i = alt(alts);
++		if(i == 1 || i == 0 && m.buttons != 0)
+ 			break;
+-		case 1:
+-			done = (k=='\n' || k==Kesc);
+-			break;
+-		case 0:
+-			done = m.buttons&1 && ptinrect(m.xy, r);
+-			break;
+-		}
+-		if(save){
+-			draw(b, save->r, save, nil, save->r.min);
+-			freeimage(save);
+-			save = nil;
+-		}
+-			
+ 	}
+-	replclipr(b, 0, sc);
+ 	freeimage(bg);
+ 	freeimage(fg);
+ 	freefont(tf);
 --- a/icons.h
 +++ b/icons.h
 @@ -420,3 +420,181 @@
@@ -532,31 +621,50 @@ diff 663d1a8c4432f3cef70466c04699fb6ebaafbc22 uncommitted
  	viewr.min.x += Scrollwidth;
  	viewr.min.y = toolr.max.y+1;
  	nlines = Dy(viewr)/lineh;
-@@ -542,13 +626,21 @@
- 		cd(nil);
- 		redraw();
+@@ -538,17 +622,38 @@
+ 	case Kpgdown:
+ 		scrolldown(nlines);
  		break;
++	case 'k':
++	case Kup:
++		scrollup(1);
++		break;
++	case 'j':
++	case Kdown:
++		scrolldown(1);
++		break;
+ 	case Khome:
+-		cd(nil);
++		scrollup(ndirs);
++		break;
++	case Kend:
++		scrolldown(ndirs);
++		break;
++	case 'r':
 +	case Kesc:
 +		loaddirs(0);
-+		redraw();
-+		break;
- 	case Kup:
+ 		redraw();
+ 		break;
+-	case Kup:
++	case 'h':
  		up();
  		redraw();
  		break;
 -	case 0x20:
 -		plumbsendtext(plumbfd, "vdir", nil, nil, path);
++	case 'b':
 +	case Kbs:
 +		back();
 +		redraw();
  		break;
++	case 'l':
 +	case 0x0a:
 +		plumbsendtext(plumbfd, "vdirw", nil, nil, path);
 +		break;
  	}
  }
  
-@@ -557,9 +649,8 @@
+@@ -557,9 +662,8 @@
  {
  	Point p;
  
@@ -568,7 +676,7 @@ diff 663d1a8c4432f3cef70466c04699fb6ebaafbc22 uncommitted
  	return p;
  }
  
-@@ -579,63 +670,36 @@
+@@ -579,63 +683,36 @@
  void
  evtmouse(Mouse m)
  {
@@ -646,7 +754,7 @@ diff 663d1a8c4432f3cef70466c04699fb6ebaafbc22 uncommitted
  		}else if(ptinrect(m.xy, newdirr)){
  			m.xy = cept("Create directory");
  			if(enter("Create directory", buf, sizeof buf, mctl, kctl, nil)>0){
-@@ -656,11 +720,40 @@
+@@ -656,11 +733,40 @@
  			if(d.qid.type & QTDIR){
  				cd(d.name);
  				redraw();
@@ -690,7 +798,7 @@ diff 663d1a8c4432f3cef70466c04699fb6ebaafbc22 uncommitted
  	}else if(m.buttons&8)
  		scrollup(Slowscroll);
  	else if(m.buttons&16)
-@@ -736,7 +829,7 @@
+@@ -736,7 +842,7 @@
  	alts[Eresize].c = mctl->resizec;
  	alts[Ekeyboard].c = kctl->c;
  	readhome();

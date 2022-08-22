@@ -1,7 +1,7 @@
-diff 3351b674802d5a69ddb6d4d0354c0e034804b0c1 uncommitted
---- a//sys/src/cmd/audio/zuke/zuke.c
-+++ b//sys/src/cmd/audio/zuke/zuke.c
-@@ -88,6 +88,7 @@
+diff 1fca5f75797af9c8c78d4cd022c41b22040de29a uncommitted
+--- a/sys/src/cmd/audio/zuke/zuke.c
++++ b/sys/src/cmd/audio/zuke/zuke.c
+@@ -90,6 +90,7 @@
  static char *cols = "AatD";
  static int colspath;
  static int *shuffle;
@@ -9,7 +9,7 @@ diff 3351b674802d5a69ddb6d4d0354c0e034804b0c1 uncommitted
  static Rectangle seekbar;
  static int seekmx, newseekmx = -1;
  static double seekoff; /* ms */
-@@ -389,28 +390,32 @@
+@@ -395,28 +396,32 @@
  	if(pcurplaying >= 0){
  		msec = byteswritten*1000/Bps;
  		if(dur > 0){
@@ -46,9 +46,9 @@ diff 3351b674802d5a69ddb6d4d0354c0e034804b0c1 uncommitted
 -		snprint(tmp, sizeof(tmp), "%s%d%%", shuffle != nil ? "∫ " : "", volume);
 +		snprint(tmp, sizeof(tmp), "%s%s%d%%", repeatone != 0 ? "¹" : "",shuffle != nil ? "∫ " : "", volume);
  	}
- 	r = screen->r;
- 	right = r.max.x - w - 4;
-@@ -708,8 +713,14 @@
+ 
+ 	r = back->r;
+@@ -743,8 +748,14 @@
  
  	while(1){
  		n = ioread(io, p[1], buf, Relbufsz);
@@ -64,7 +64,7 @@ diff 3351b674802d5a69ddb6d4d0354c0e034804b0c1 uncommitted
  
  		thiscover = nil;
  		if(player->img != nil && nbrecv(player->img, &thiscover) != 0){
-@@ -729,6 +740,7 @@
+@@ -764,6 +775,7 @@
  					goto stop;
  			}
  			if(c == Cseekrel){
@@ -72,25 +72,22 @@ diff 3351b674802d5a69ddb6d4d0354c0e034804b0c1 uncommitted
  				boffset = MAX(0, boffset + player->seek*Bps);
  				n = 0;
  				break;
-@@ -1132,7 +1144,7 @@
+@@ -1170,7 +1182,7 @@
  	f = display->defaultfont;
  	Scrollwidth = MAX(14, stringwidth(f, "#"));
  	Scrollheight = MAX(16, f->height);
 -	Coversz = MAX(64, stringwidth(f, "∫ 00:00:00/00:00:00 100%"));
 +	Coversz = MAX(64, stringwidth(f, "¹∫ 00:00:00/00:00:00 100%"));
- 	unlockdisplay(display);
- 	display->locking = 1;
  	if((mctl = initmouse(nil, screen)) == nil)
-@@ -1339,7 +1351,11 @@
+ 		sysfatal("initmouse: %r");
+ 	if((kctl = initkeyboard(nil)) == nil)
+@@ -1372,6 +1384,9 @@
  			case 's':
  				toggleshuffle();
  				recenter();
--				redraw(1);
-+				redraw(playercurr == nil ? 1 : 0);
-+				break;
-+			case 'r':
-+				repeatone ^= 1;
-+				redraw(playercurr == nil ? 1 : 0);
++ 				break;
++ 			case 'r':
++ 				repeatone ^= 1;
  				break;
  			case 'c':
  			case 'p':

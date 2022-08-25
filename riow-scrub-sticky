@@ -1,0 +1,12 @@
+diff dfe3af1fc5b8ec7682b6b7a9fe7ea32eaaad89c7 uncommitted
+--- a/riow.c
++++ b/riow.c
+@@ -34,7 +34,7 @@
+ static int vd2wcur[10] = {-1};
+ 
+ static char *sticky[] = {
+-	"bar", "cat clock", "clock", "faces", "kbmap", "stats", "winwatch",
++	"bar"
+ };
+ 
+ static int

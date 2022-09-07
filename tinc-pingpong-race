@@ -1,0 +1,15 @@
+diff 5a3aea0ca8fc8ec5529a5328e6f7879ad6d976da uncommitted
+--- a//sys/src/cmd/ip/tinc.c
++++ b//sys/src/cmd/ip/tinc.c
+@@ -1301,7 +1301,10 @@
+ 	while((n = conrecv(c, f, nelem(f))) > 0){
+ 		switch(atoi(f[0])){
+ 		case PING:
+-			if(consend(c, "%d %x", PONG, rand()) < 0)
++			netlock(c);
++			n = consend(c, "%d %x", PONG, rand());
++			netunlock(c);
++			if(n < 0)
+ 				return;
+ 			continue;
+ 		case PONG:

@@ -1,10 +1,12 @@
-diff -r 5adefb206fa3 sys/src/9/boot/nusbrc
---- a/sys/src/9/boot/nusbrc	Tue Aug 07 23:46:58 2018 +0200
-+++ b/sys/src/9/boot/nusbrc	Wed Aug 08 06:14:09 2018 +0300
-@@ -15,6 +15,8 @@
+diff 957863b064ed01ebb1297ddd368ce5a78c957f5e uncommitted
+--- a//sys/src/9/boot/nusbrc
++++ b//sys/src/9/boot/nusbrc
+@@ -15,6 +15,10 @@
  		if(~ $#* 5 && ! test -e /env/nousbhname)
  			id=$1:$5
  		switch($2$3){
++		case 20110715
++			# avoid nusb/kb on mpk mini
 +		case 17810a99 17810a96 05832060
 +			# let nusb/joy take this one
  		case 0b957720 0b95772a 0db0a877 13b10018 15577720 20013c05 07d13c05 05ac1402

@@ -1,7 +1,7 @@
-diff f42f1f2dbdc59b8b065e9740ca51eddd2f5ae698 uncommitted
---- a/sys/src/cmd/riow.c
-+++ b/sys/src/cmd/riow.c
-@@ -35,12 +35,6 @@
+diff 502fe5af32a3d275aa89ffc834157bdbabc45c50 uncommitted
+--- a//sys/src/cmd/riow.c
++++ b//sys/src/cmd/riow.c
+@@ -37,12 +37,6 @@
  
  static char *sticky[32] = {
  	"bar",

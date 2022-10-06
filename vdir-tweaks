@@ -1,6 +1,6 @@
-diff 663d1a8c4432f3cef70466c04699fb6ebaafbc22 uncommitted
---- a/alert.c
-+++ b/alert.c
+diff 8ffa802e29ca42eb54cc4b10f8c756ba6275e801 uncommitted
+--- a/./alert.c
++++ b/./alert.c
 @@ -19,11 +19,11 @@
  alert(const char *title, const char *message, const char *err, Mousectl *mctl, Keyboardctl *kctl)
  {
@@ -99,8 +99,8 @@ diff 663d1a8c4432f3cef70466c04699fb6ebaafbc22 uncommitted
  	freeimage(bg);
  	freeimage(fg);
  	freefont(tf);
---- a/icons.h
-+++ b/icons.h
+--- a/./icons.h
++++ b/./icons.h
 @@ -420,3 +420,181 @@
  	0x46, 0x00, 0x00, 0x00, 0x44, 0x00, 0x00, 0x00, 0x10, 0x00, 0x00, 0x00,
  	
@@ -283,8 +283,143 @@ diff 663d1a8c4432f3cef70466c04699fb6ebaafbc22 uncommitted
 +	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 +	0x00, 0x00, 0x00, 0x00
 +};
---- a/vdir.c
-+++ b/vdir.c
+--- a/./theme.c
++++ b/./theme.c
+@@ -21,64 +21,57 @@
+ 	return i;
+ }
+ 
+-Theme*
+-loadtheme(void)
++void
++loadtheme(Theme *theme)
+ {
+-	Theme *theme;
+ 	Biobuf *bp;
+ 	char *s;
+ 
+ 	if(access("/dev/theme", AREAD) < 0)
+-		return 0;
++		return;
+ 	bp = Bopen("/dev/theme", OREAD);
+ 	if(bp == nil)
+-		return 0;
+-	theme = malloc(sizeof *theme);
+-	if(theme == nil){
+-		Bterm(bp);
+-		return nil;
+-	}
++		return;
+ 	for(;;){
+ 		s = Brdstr(bp, '\n', 1);
+ 		if(s == nil)
+ 			break;
+ 		if(strncmp(s, "back", 4) == 0)
+-			theme->back = ereadcol(s+5);
++			theme->back = strtoul(s+5, nil, 16);
+ 		else if(strncmp(s, "high", 4) == 0)
+-			theme->high = ereadcol(s+5);
++			theme->high = strtoul(s+5, nil, 16);
+ 		else if(strncmp(s, "border", 6) == 0)
+-			theme->border = ereadcol(s+7);
++			theme->border = strtoul(s+7, nil, 16);
+ 		else if(strncmp(s, "text", 4) == 0)
+-			theme->text = ereadcol(s+5);
++			theme->text = strtoul(s+5, nil, 16);
+ 		else if(strncmp(s, "htext", 5) == 0)
+-			theme->htext = ereadcol(s+6);
++			theme->htext = strtoul(s+6, nil, 16);
+ 		else if(strncmp(s, "title", 5) == 0)
+-			theme->title = ereadcol(s+6);
++			theme->title = strtoul(s+6, nil, 16);
+ 		else if(strncmp(s, "ltitle", 6) == 0)
+-			theme->ltitle = ereadcol(s+7);
++			theme->ltitle = strtoul(s+7, nil, 16);
+ 		else if(strncmp(s, "hold", 4) == 0)
+-			theme->hold = ereadcol(s+5);
++			theme->hold = strtoul(s+5, nil, 16);
+ 		else if(strncmp(s, "lhold", 5) == 0)
+-			theme->lhold = ereadcol(s+6);
++			theme->lhold = strtoul(s+6, nil, 16);
+ 		else if(strncmp(s, "palehold", 8) == 0)
+-			theme->palehold = ereadcol(s+9);
++			theme->palehold = strtoul(s+9, nil, 16);
+ 		else if(strncmp(s, "paletext", 8) == 0)
+-			theme->paletext = ereadcol(s+9);
++			theme->paletext = strtoul(s+9, nil, 16);
+ 		else if(strncmp(s, "size", 4) == 0)
+-			theme->size = ereadcol(s+5);
++			theme->size = strtoul(s+5, nil, 16);
+ 		else if(strncmp(s, "menuback", 8) == 0)
+-			theme->menuback = ereadcol(s+9);
++			theme->menuback = strtoul(s+9, nil, 16);
+ 		else if(strncmp(s, "menuhigh", 8) == 0)
+-			theme->menuhigh = ereadcol(s+9);
++			theme->menuhigh = strtoul(s+9, nil, 16);
+ 		else if(strncmp(s, "menubord", 8) == 0)
+-			theme->menubord = ereadcol(s+9);
++			theme->menubord = strtoul(s+9, nil, 16);
+ 		else if(strncmp(s, "menutext", 8) == 0)
+-			theme->menutext = ereadcol(s+9);
++			theme->menutext = strtoul(s+9, nil, 16);
+ 		else if(strncmp(s, "menuhtext", 5) == 0)
+-			theme->menuhtext = ereadcol(s+6);
++			theme->menuhtext = strtoul(s+6, nil, 16);
+ 		free(s);
+ 	}
+ 	Bterm(bp);
+-	return theme;
+ }
+ 
+--- a/./theme.h
++++ b/./theme.h
+@@ -2,24 +2,25 @@
+ 
+ struct Theme
+ {
+-	Image *back;
+-	Image *high;
+-	Image *border;
+-	Image *text;
+-	Image *htext;
+-	Image *title;
+-	Image *ltitle;
+-	Image *hold;
+-	Image *lhold;
+-	Image *palehold;
+-	Image *paletext;
+-	Image *size;
+-	Image *menubar;
+-	Image *menuback;
+-	Image *menuhigh;
+-	Image *menubord;
+-	Image *menutext;
+-	Image *menuhtext;
++	u32int back;
++	u32int high;
++	u32int border;
++	u32int text;
++	u32int htext;
++	u32int title;
++	u32int ltitle;
++	u32int hold;
++	u32int lhold;
++	u32int palehold;
++	u32int paletext;
++	u32int size;
++	u32int menubar;
++	u32int menuback;
++	u32int menuhigh;
++	u32int menubord;
++	u32int menutext;
++	u32int menuhtext;
+ };
+ 
+-Theme* loadtheme(void);
++void	loadtheme(Theme*);
++Image*	ereadcol(char*);
+--- a/./vdir.c
++++ b/./vdir.c
 @@ -20,6 +20,13 @@
  	Slowscroll = 10,
  };
@@ -337,11 +472,18 @@ diff 663d1a8c4432f3cef70466c04699fb6ebaafbc22 uncommitted
  {
  	int fd, i, m;
  
-@@ -135,7 +149,10 @@
+@@ -134,13 +148,11 @@
+ 	if(dirs!=nil)
  		free(dirs);
  	ndirs = dirreadall(fd, &dirs);
- 	qsort(dirs, ndirs, sizeof *dirs, (int(*)(void*,void*))dircmp);
+-	if(ndirs > 0)
+-		qsort(dirs, ndirs, sizeof *dirs, (int(*)(void*,void*))dircmp);
+-	else{
+-		ndirs = 0;
+-		showerrstr("Unable to read directory");
+-	}
 -	offset = 0;
++	qsort(dirs, ndirs, sizeof *dirs, (int(*)(void*,void*))dircmp);
 +	if(!fixoff)
 +		scrollclamp(offset);
 +	else
@@ -349,7 +491,12 @@ diff 663d1a8c4432f3cef70466c04699fb6ebaafbc22 uncommitted
  	close(fd);
  	m = 1;
  	for(i=0; i < ndirs; i++){
-@@ -146,10 +163,43 @@
+@@ -147,14 +159,47 @@
+ 		if(dirs[i].length>m)
+ 			m=dirs[i].length;
+ 	}
+-	sizew = m == 0 ? 3 : 1+1+log(m)/log(10);
++	sizew = 1+1+log(m)/log(10);
  }
  
  void
@@ -394,7 +541,7 @@ diff 663d1a8c4432f3cef70466c04699fb6ebaafbc22 uncommitted
  }
  
  void
-@@ -157,6 +207,7 @@
+@@ -162,6 +207,7 @@
  {
  	char newpath[256] = {0};
  
@@ -402,7 +549,7 @@ diff 663d1a8c4432f3cef70466c04699fb6ebaafbc22 uncommitted
  	if(dir == nil)
  		snprint(newpath, sizeof path, home);
  	else if(dir[0] == '/')
-@@ -167,7 +218,7 @@
+@@ -172,7 +218,7 @@
  		showerrstr("Directory does not exist");
  	else
  		snprint(path, sizeof path, abspath(path, newpath));
@@ -411,7 +558,7 @@ diff 663d1a8c4432f3cef70466c04699fb6ebaafbc22 uncommitted
  }
  
  void
-@@ -187,7 +238,7 @@
+@@ -192,7 +238,7 @@
  		goto cleanup;
  	}
  	close(fd);
@@ -420,7 +567,7 @@ diff 663d1a8c4432f3cef70466c04699fb6ebaafbc22 uncommitted
  cleanup:
  	free(p);
  }
-@@ -209,7 +260,7 @@
+@@ -214,7 +260,7 @@
  		goto cleanup;
  	}
  	close(fd);
@@ -429,7 +576,7 @@ diff 663d1a8c4432f3cef70466c04699fb6ebaafbc22 uncommitted
  cleanup:
  	free(p);
  }
-@@ -257,7 +308,7 @@
+@@ -262,7 +308,7 @@
  	if(doexec(cmd) < 0)
  		showerrstr("Cannot remove file/directory");
  	else
@@ -438,7 +585,7 @@ diff 663d1a8c4432f3cef70466c04699fb6ebaafbc22 uncommitted
  }
  
  void
-@@ -269,11 +320,11 @@
+@@ -274,11 +320,11 @@
  	if(doexec(cmd) < 0)
  		showerrstr("Cannot rename file/directory");
  	else
@@ -452,7 +599,7 @@ diff 663d1a8c4432f3cef70466c04699fb6ebaafbc22 uncommitted
  {
  	char *f;
  	int e;
-@@ -280,11 +331,14 @@
+@@ -285,11 +331,14 @@
  
  	f = smprint("%s/%s", path, name);
  	e = access(f, 0)==0;
@@ -471,7 +618,50 @@ diff 663d1a8c4432f3cef70466c04699fb6ebaafbc22 uncommitted
  		redraw();
  	}
  	free(f);
-@@ -346,6 +400,8 @@
+@@ -299,28 +348,21 @@
+ void
+ initcolors(void)
+ {
+-	Theme *theme;
++	Theme theme;
+ 
+-	theme = loadtheme();
+-	if(theme == nil){
+-		toolbg = allocimage(display, Rect(0,0,1,1), screen->chan, 1, 0xEFEFEFFF);
+-		toolfg = display->black;
+-		viewbg = display->white;
+-		viewfg = display->black;
+-		selbg  = allocimage(display, Rect(0,0,1,1), screen->chan, 1, 0xEFEFEFFF);
+-		selfg  = display->black;
+-		scrollbg = allocimage(display, Rect(0,0,1,1), screen->chan, 1, 0x999999FF);
+-		scrollfg = display->white;
+-	}else{
+-		toolbg = theme->back;
+-		toolfg = theme->text;
+-		viewbg = theme->back;
+-		viewfg = theme->text;
+-		selbg  = theme->border;
+-		selfg  = theme->text;
+-		scrollbg = theme->border;
+-		scrollfg = theme->back;
+-	}
++	memset(&theme, 0, sizeof theme);
++	theme.back = 0xEFEFEF;
++	theme.text = 0;
++	theme.border = 0x999999;
++	loadtheme(&theme);
++	toolbg = allocimage(display, Rect(0,0,1,1), screen->chan, 1, theme.back << 8 | 0xff);
++	toolfg = allocimage(display, Rect(0,0,1,1), screen->chan, 1, theme.text << 8 | 0xff);
++	viewbg = allocimage(display, Rect(0,0,1,1), screen->chan, 1, theme.back << 8 | 0xff);
++	viewfg = allocimage(display, Rect(0,0,1,1), screen->chan, 1, theme.text << 8 | 0xff);
++	selbg = allocimage(display, Rect(0,0,1,1), screen->chan, 1, theme.border << 8 | 0xff);
++	selfg = allocimage(display, Rect(0,0,1,1), screen->chan, 1, theme.text << 8 | 0xff);
++	scrollbg = allocimage(display, Rect(0,0,1,1), screen->chan, 1, theme.border << 8 | 0xff);
++	scrollfg = allocimage(display, Rect(0,0,1,1), screen->chan, 1, theme.back << 8 | 0xff);
+ }
+ 
+ Image*
+@@ -351,6 +393,8 @@
  	iup    = loadicon(big, updata, sizeof updata);
  	inewfile = loadicon(big, newfiledata, sizeof newfiledata);
  	inewfolder = loadicon(big, newfolderdata, sizeof newfolderdata);
@@ -480,7 +670,7 @@ diff 663d1a8c4432f3cef70466c04699fb6ebaafbc22 uncommitted
  }
  
  char*
-@@ -366,7 +422,7 @@
+@@ -371,7 +415,7 @@
  
  	p->x += Toolpadding;
  	r = Rect(p->x, p->y, p->x+16, p->y+16);
@@ -489,7 +679,7 @@ diff 663d1a8c4432f3cef70466c04699fb6ebaafbc22 uncommitted
  	p->x += 16+Toolpadding;
  	return r;
  }
-@@ -379,12 +435,12 @@
+@@ -384,12 +428,12 @@
  
  	s = t;
  	if(*s && (p.x+stringwidth(font, s)) > n){
@@ -504,7 +694,7 @@ diff 663d1a8c4432f3cef70466c04699fb6ebaafbc22 uncommitted
  	}
  	return p;
  }
-@@ -407,7 +463,7 @@
+@@ -412,7 +456,7 @@
  	p = addpt(viewr.min, Pt(Toolpadding, Toolpadding));
  	p.y += n*lineh;
  	r = Rpt(p, addpt(p, Pt(Dx(viewr)-2*Toolpadding, lineh)));
@@ -513,7 +703,7 @@ diff 663d1a8c4432f3cef70466c04699fb6ebaafbc22 uncommitted
  	t = mdate(d);
  	snprint(buf, sizeof buf, "%*lld  %s", sizew, d.length, t);
  	free(t);
-@@ -414,12 +470,12 @@
+@@ -419,12 +463,12 @@
  	img = (d.qid.type&QTDIR) ? folder : file;
  	p.y -= Padding;
  	dy = (lineh-12)/2;
@@ -528,7 +718,7 @@ diff 663d1a8c4432f3cef70466c04699fb6ebaafbc22 uncommitted
  }
  
  void
-@@ -440,22 +496,25 @@
+@@ -445,22 +489,25 @@
  	Point p;
  	int i, h, y;
  
@@ -562,7 +752,7 @@ diff 663d1a8c4432f3cef70466c04699fb6ebaafbc22 uncommitted
  	if(ndirs>0){
  		h = ((double)nlines/ndirs)*Dy(scrollr);
  		y = ((double)offset/ndirs)*Dy(scrollr);
-@@ -462,10 +521,11 @@
+@@ -467,10 +514,11 @@
  		scrposr = Rect(scrollr.min.x, scrollr.min.y+y, scrollr.max.x-1, scrollr.min.y+y+h);
  	}else
  		scrposr = Rect(scrollr.min.x, scrollr.min.y, scrollr.max.x-1, scrollr.max.y);
@@ -575,7 +765,7 @@ diff 663d1a8c4432f3cef70466c04699fb6ebaafbc22 uncommitted
  	flushimage(display, 1);
  }
  
-@@ -506,18 +566,42 @@
+@@ -511,18 +559,42 @@
  }
  
  void
@@ -621,7 +811,7 @@ diff 663d1a8c4432f3cef70466c04699fb6ebaafbc22 uncommitted
  	viewr.min.x += Scrollwidth;
  	viewr.min.y = toolr.max.y+1;
  	nlines = Dy(viewr)/lineh;
-@@ -538,17 +622,38 @@
+@@ -543,17 +615,38 @@
  	case Kpgdown:
  		scrolldown(nlines);
  		break;
@@ -664,7 +854,7 @@ diff 663d1a8c4432f3cef70466c04699fb6ebaafbc22 uncommitted
  	}
  }
  
-@@ -557,9 +662,8 @@
+@@ -562,9 +655,8 @@
  {
  	Point p;
  
@@ -676,7 +866,7 @@ diff 663d1a8c4432f3cef70466c04699fb6ebaafbc22 uncommitted
  	return p;
  }
  
-@@ -579,63 +683,36 @@
+@@ -584,63 +676,36 @@
  void
  evtmouse(Mouse m)
  {
@@ -754,7 +944,7 @@ diff 663d1a8c4432f3cef70466c04699fb6ebaafbc22 uncommitted
  		}else if(ptinrect(m.xy, newdirr)){
  			m.xy = cept("Create directory");
  			if(enter("Create directory", buf, sizeof buf, mctl, kctl, nil)>0){
-@@ -656,11 +733,40 @@
+@@ -661,11 +726,40 @@
  			if(d.qid.type & QTDIR){
  				cd(d.name);
  				redraw();
@@ -798,7 +988,7 @@ diff 663d1a8c4432f3cef70466c04699fb6ebaafbc22 uncommitted
  	}else if(m.buttons&8)
  		scrollup(Slowscroll);
  	else if(m.buttons&16)
-@@ -736,7 +842,7 @@
+@@ -741,7 +835,7 @@
  	alts[Eresize].c = mctl->resizec;
  	alts[Ekeyboard].c = kctl->c;
  	readhome();

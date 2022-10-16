@@ -1,0 +1,158 @@
+diff c653369e862d2b2235133cfcb0391bc4809ce4b1 uncommitted
+--- /dev/null
++++ b/include/npe/sys/times.h
+@@ -1,0 +1,29 @@
++#ifndef _npe_sys_times_h_
++#define _npe_sys_times_h_
++
++#include <npe.h>
++#include <time.h>
++
++#ifndef _CLOCK_T
++#define _CLOCK_T
++typedef long clock_t;
++#endif
++
++struct tms {
++	clock_t	tms_utime;
++	clock_t	tms_stime;
++	clock_t	tms_cutime;
++	clock_t	tms_cstime;
++};
++
++#ifdef __cplusplus
++extern "C" {
++#endif
++
++clock_t times2pe(struct tms *);
++
++#ifdef __cplusplus
++}
++#endif
++
++#endif
+--- a/include/npe/time.h
++++ b/include/npe/time.h
+@@ -3,7 +3,21 @@
+ 
+ #include <npe.h>
+ 
++#include <stddef.h>
++
++#define CLOCKS_PER_SEC 1000
++
++/* obsolsecent, but required */
++#define CLK_TCK CLOCKS_PER_SEC
++
++#ifndef _CLOCK_T
++#define _CLOCK_T
++typedef long clock_t;
++#endif
++#ifndef _TIME_T
++#define _TIME_T
+ typedef long time_t;
++#endif
+ 
+ struct tm {
+ 	int tm_sec;
+@@ -19,6 +33,7 @@
+ 
+ #include <sys/time.h>
+ 
++clock_t clock(void);
+ #define localtime npe_localtime
+ struct tm *npe_localtime(time_t *timep);
+ #define gmtime npe_gmtime
+--- /dev/null
++++ b/libnpe/clock.c
+@@ -1,0 +1,12 @@
++#include <time.h>
++#include <sys/times.h>
++
++clock_t
++clock(void)
++{
++	struct tms t;
++
++	if(times2pe(&t) == (clock_t)-1)
++		return (clock_t)-1;
++	return t.tms_utime+t.tms_stime;
++}
+--- a/libnpe/mkfile
++++ b/libnpe/mkfile
+@@ -11,6 +11,7 @@
+ OFILES=\
+ 	_main.$O\
+ 	_npe.$O\
++	clock.$O\
+ 	closedir.$O\
+ 	dirfd.$O\
+ 	exp2.$O\
+--- /dev/null
++++ b/libnpe/times.c
+@@ -1,0 +1,65 @@
++#include <sys/types.h>
++#include <sys/stat.h>
++#include <fcntl.h>
++#include <sys/times.h>
++#include <unistd.h>
++#include <errno.h>
++#include <string.h>
++#include <stdlib.h>
++
++static
++char*
++skip(char *p)
++{
++
++	while(*p == ' ')
++		p++;
++	while(*p != ' ' && *p != 0)
++		p++;
++	return p;
++}
++
++static clock_t
++times_(struct tms *buf)
++{
++	char b[200], *p;
++	int f;
++	unsigned long r;
++
++	memset(b, 0, sizeof(b));
++	f = open("/dev/cputime", O_RDONLY);
++	if(f >= 0) {
++		lseek(f, SEEK_SET, 0);
++		read(f, b, sizeof(b));
++		close(f);
++	}
++	p = b;
++	if(buf)
++		buf->tms_utime = atol(p);
++	p = skip(p);
++	if(buf)
++		buf->tms_stime = atol(p);
++	p = skip(p);
++	r = atol(p);
++	if(buf){
++		p = skip(p);
++		buf->tms_cutime = atol(p);
++		p = skip(p);
++		buf->tms_cstime = atol(p);
++	}
++	return r;
++}
++
++clock_t
++times2pe(struct tms *buf)
++{
++	long t[4];
++	clock_t r;
++
++	times(&t):
++	buf->tms_utime = t[0];
++	buf->tms_stime = t[1];
++	buf->tms_cutime = t[2];
++	buf->tms_cstime = t[3];
++	return 
++}

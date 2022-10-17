@@ -1,0 +1,50 @@
+diff c653369e862d2b2235133cfcb0391bc4809ce4b1 uncommitted
+--- a/include/npe/SDL2/SDL_keycode.h
++++ b/include/npe/SDL2/SDL_keycode.h
+@@ -81,13 +81,13 @@
+ 	SDLK_RALT = Kaltgr, /* FIXME what about keyboards without it? */
+ 	/* FIXME no distinction */
+ 	SDLK_LSHIFT = Kshift,
+-	SDLK_RSHIFT = SDLK_LSHIFT,
++	SDLK_RSHIFT = Spec|0x69,	/* hack */
+ 	SDLK_LCTRL = Kctl,
+-	SDLK_RCTRL = '>', /* FIXME this is a hack */
++	SDLK_RCTRL = Spec|0x6a,		/* hack */
++	SDLK_CAPSLOCK = Kcaps,
+ 
+ 	/* FIXME not bound to anything */
+ 	SDLK_UNKNOWN = -99999,
+-	SDLK_CAPSLOCK,
+ 	SDLK_KP_ENTER,
+ 	SDLK_AC_BACK,
+ 
+--- a/libnpe_sdl2/events.c
++++ b/libnpe_sdl2/events.c
+@@ -206,6 +206,9 @@
+ 	if(r == Kalt) return SDL_SCANCODE_LALT;
+ 	if(r == Kmod4) return SDL_SCANCODE_LGUI;
+ 	if(r == Kaltgr) return SDL_SCANCODE_RALT;
++	if(r == Kcaps) return SDL_SCANCODE_CAPSLOCK;
++	if(r == Spec|0x69) return SDL_SCANCODE_RSHIFT;
++	if(r == Spec|0x6a) return SDL_SCANCODE_RCTRL;
+ 
+ 	if(r >= (KF|1) && r <= (KF|12)) return SDL_SCANCODE_F1 + r - (KF|1);
+ 
+@@ -294,6 +297,8 @@
+ 						kmod |= KMOD_LALT;
+ 					}else if (r == Kshift)
+ 						kmod |= KMOD_LSHIFT;
++					else if (r == Kcaps)
++						kmod |= KMOD_CAPS;
+ 					else if(r == Kctl)
+ 						kmod |= KMOD_LCTRL;
+ 					else if(r == Kaltgr)
+@@ -323,6 +328,8 @@
+ 						kmod &= ~KMOD_LSHIFT;
+ 					else if(r == Kctl)
+ 						kmod &= ~KMOD_LCTRL;
++					else if (r == Kcaps)
++						kmod &= ~KMOD_CAPS;
+ 					else{
+ 						t = Rup;
+ 						send(salt[Ckey].c, &r);

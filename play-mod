@@ -1,0 +1,21 @@
+diff d376fac66cbd5efbe2f9f61a1e8b31af03a84a92 uncommitted
+--- a//rc/bin/play
++++ b//rc/bin/play
+@@ -69,6 +69,8 @@
+ 			midi
+ 		case *audio/mus*
+ 			games/mus | midi
++		case *audio/mod*
++			mod/decode
+ 		case *pls*
+ 			awk 'BEGIN {FS="="} /^File/{print $2}' | play1 list plain
+ 		case *
+@@ -87,6 +89,8 @@
+ 				midi
+ 			case *.mus *.MUS
+ 				games/mus | midi
++			case *.mod *.MOD
++				mod/decode
+ 			case *
+ 				echo $argv0: $1: unknown format: $2 >[1=2]
+ 			}

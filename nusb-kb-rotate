@@ -1,0 +1,19 @@
+diff 62253b9d1720fb3ce962a5a6b2bdf5588267be8a uncommitted
+--- a//sys/src/cmd/nusb/kb/kb.c
++++ b//sys/src/cmd/nusb/kb/kb.c
+@@ -867,8 +867,13 @@
+ 				if(s->abs == l->abs && s->x == l->x && s->y == l->y && s->b == l->b)
+ 					continue;
+ 				abs = 1;
+-				x = s->x;
+-				y = s->y;
++				if(f->dev->usb->vid == 0x28bd && f->dev->usb->did == 0x0920){
++					x = s->y;
++					y = 0x80000000UL - s->x;
++				}else{
++					x = s->x;
++					y = s->y;
++				}
+ 			} else {
+ 				/* everything needs to be relative */
+ 				if((s->abs & 3) != 0 || abs)

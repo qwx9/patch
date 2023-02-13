@@ -1,28 +1,29 @@
-diff -r cad89138e0ac rc/bin/play
---- a/rc/bin/play	Wed Dec 23 13:10:30 2020 +0100
-+++ b/rc/bin/play	Sat Dec 26 02:38:14 2020 +0100
-@@ -46,8 +46,12 @@
- 					}
- 				}
+diff 87a6e1873b3ebd90a6cc075b3a833cca5b675f1a uncommitted
+--- a//rc/bin/play
++++ b//rc/bin/play
+@@ -55,7 +55,11 @@
  			}
+ 		case *aac*
+ 			audio/aacdec
 -		case *ogg* *vorbis*
-+		case *ogg*vorbis*
- 			audio/oggdec
 +		case *ogg*opus*
 +			audio/opusdec
-+		case *aac*
-+			audio/aacdec
++		case *m4a*	# ?
++			audio/m4adec
++		case *ogg*vorbis*
+ 			audio/oggdec
  		case *mp3* *mpeg*
  			audio/mp3dec
- 		case *wave*
-@@ -68,6 +72,10 @@
- 				audio/mp3dec
- 			case *.ogg *.OGG
- 				audio/oggdec
+@@ -75,6 +79,12 @@
+ 			awk 'BEGIN {FS="="} /^File/{print $2}' | play1 list plain
+ 		case *
+ 			switch($1){
 +			case *.opus *.OPUS
 +				audio/opusdec
-+			case *.aac *.AAC *.m4a *.M4A
++			case *.m4a *.M4A
++				audio/m4adec
++			case *.aac *.AAC
 +				audio/aacdec
- 			case *.wav *.WAV
- 				audio/wavdec
- 			case *.flac *.FLAC
+ 			case *.mp3 *.MP3
+ 				audio/mp3dec
+ 			case *.ogg *.OGG

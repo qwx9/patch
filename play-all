@@ -1,4 +1,4 @@
-diff d376fac66cbd5efbe2f9f61a1e8b31af03a84a92 uncommitted
+diff 87a6e1873b3ebd90a6cc075b3a833cca5b675f1a uncommitted
 --- a//rc/bin/play
 +++ b//rc/bin/play
 @@ -55,7 +55,11 @@
@@ -14,13 +14,16 @@ diff d376fac66cbd5efbe2f9f61a1e8b31af03a84a92 uncommitted
  			audio/oggdec
  		case *mp3* *mpeg*
  			audio/mp3dec
-@@ -69,10 +73,18 @@
+@@ -69,6 +73,8 @@
  			midi
  		case *audio/mus*
  			games/mus | midi
 +		case *audio/mod*
 +			mod/decode
+ 		case *audio/x-voc*
+ 			audio/vocdec
  		case *pls*
+@@ -75,6 +81,12 @@
  			awk 'BEGIN {FS="="} /^File/{print $2}' | play1 list plain
  		case *
  			switch($1){
@@ -33,7 +36,7 @@ diff d376fac66cbd5efbe2f9f61a1e8b31af03a84a92 uncommitted
  			case *.mp3 *.MP3
  				audio/mp3dec
  			case *.ogg *.OGG
-@@ -87,6 +99,8 @@
+@@ -89,6 +101,8 @@
  				midi
  			case *.mus *.MUS
  				games/mus | midi

@@ -42,4 +42,4 @@ diff -r b012b1555646 sys/src/cmd/mothra/rdhtml.c
 +	"terminus/unicode.16", 0, 0,
  };
  
- Font *pl_whichfont(int f, int s, int *space){
+ static struct{

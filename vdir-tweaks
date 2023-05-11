@@ -1,6 +1,6 @@
-diff 8ffa802e29ca42eb54cc4b10f8c756ba6275e801 uncommitted
---- a/./alert.c
-+++ b/./alert.c
+diff a50ea54acc46b5ee57b463ef3e881515cc962c00 uncommitted
+--- a/alert.c
++++ b/alert.c
 @@ -19,11 +19,11 @@
  alert(const char *title, const char *message, const char *err, Mousectl *mctl, Keyboardctl *kctl)
  {
@@ -99,8 +99,8 @@ diff 8ffa802e29ca42eb54cc4b10f8c756ba6275e801 uncommitted
  	freeimage(bg);
  	freeimage(fg);
  	freefont(tf);
---- a/./icons.h
-+++ b/./icons.h
+--- a/icons.h
++++ b/icons.h
 @@ -420,3 +420,181 @@
  	0x46, 0x00, 0x00, 0x00, 0x44, 0x00, 0x00, 0x00, 0x10, 0x00, 0x00, 0x00,
  	
@@ -283,8 +283,8 @@ diff 8ffa802e29ca42eb54cc4b10f8c756ba6275e801 uncommitted
 +	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 +	0x00, 0x00, 0x00, 0x00
 +};
---- a/./theme.c
-+++ b/./theme.c
+--- a/theme.c
++++ b/theme.c
 @@ -21,64 +21,57 @@
  	return i;
  }
@@ -371,8 +371,8 @@ diff 8ffa802e29ca42eb54cc4b10f8c756ba6275e801 uncommitted
 -	return theme;
  }
  
---- a/./theme.h
-+++ b/./theme.h
+--- a/theme.h
++++ b/theme.h
 @@ -2,24 +2,25 @@
  
  struct Theme
@@ -418,8 +418,8 @@ diff 8ffa802e29ca42eb54cc4b10f8c756ba6275e801 uncommitted
 -Theme* loadtheme(void);
 +void	loadtheme(Theme*);
 +Image*	ereadcol(char*);
---- a/./vdir.c
-+++ b/./vdir.c
+--- a/vdir.c
++++ b/vdir.c
 @@ -20,6 +20,13 @@
  	Slowscroll = 10,
  };
@@ -470,17 +470,18 @@ diff 8ffa802e29ca42eb54cc4b10f8c756ba6275e801 uncommitted
 -loaddirs(void)
 +loaddirs(int fixoff)
  {
- 	int fd, i, m;
- 
-@@ -134,13 +148,11 @@
+ 	int fd, i;
+ 	vlong m;
+@@ -135,14 +149,11 @@
  	if(dirs!=nil)
  		free(dirs);
  	ndirs = dirreadall(fd, &dirs);
 -	if(ndirs > 0)
 -		qsort(dirs, ndirs, sizeof *dirs, (int(*)(void*,void*))dircmp);
 -	else{
+-		if(ndirs < 0)
+-			showerrstr("Unable to read directory");
 -		ndirs = 0;
--		showerrstr("Unable to read directory");
 -	}
 -	offset = 0;
 +	qsort(dirs, ndirs, sizeof *dirs, (int(*)(void*,void*))dircmp);
@@ -491,7 +492,7 @@ diff 8ffa802e29ca42eb54cc4b10f8c756ba6275e801 uncommitted
  	close(fd);
  	m = 1;
  	for(i=0; i < ndirs; i++){
-@@ -147,14 +159,47 @@
+@@ -149,14 +160,47 @@
  		if(dirs[i].length>m)
  			m=dirs[i].length;
  	}
@@ -541,7 +542,7 @@ diff 8ffa802e29ca42eb54cc4b10f8c756ba6275e801 uncommitted
  }
  
  void
-@@ -162,6 +207,7 @@
+@@ -164,6 +208,7 @@
  {
  	char newpath[256] = {0};
  
@@ -549,7 +550,7 @@ diff 8ffa802e29ca42eb54cc4b10f8c756ba6275e801 uncommitted
  	if(dir == nil)
  		snprint(newpath, sizeof path, home);
  	else if(dir[0] == '/')
-@@ -172,7 +218,7 @@
+@@ -174,7 +219,7 @@
  		showerrstr("Directory does not exist");
  	else
  		snprint(path, sizeof path, abspath(path, newpath));
@@ -558,7 +559,7 @@ diff 8ffa802e29ca42eb54cc4b10f8c756ba6275e801 uncommitted
  }
  
  void
-@@ -192,7 +238,7 @@
+@@ -194,7 +239,7 @@
  		goto cleanup;
  	}
  	close(fd);
@@ -567,7 +568,7 @@ diff 8ffa802e29ca42eb54cc4b10f8c756ba6275e801 uncommitted
  cleanup:
  	free(p);
  }
-@@ -214,7 +260,7 @@
+@@ -216,7 +261,7 @@
  		goto cleanup;
  	}
  	close(fd);
@@ -576,21 +577,25 @@ diff 8ffa802e29ca42eb54cc4b10f8c756ba6275e801 uncommitted
  cleanup:
  	free(p);
  }
-@@ -262,7 +308,7 @@
+@@ -267,7 +312,7 @@
  	if(doexec(cmd) < 0)
  		showerrstr("Cannot remove file/directory");
  	else
 -		loaddirs();
 +		loaddirs(0);
+ 	free(qp);
+ 	free(p);
  }
- 
- void
-@@ -274,11 +320,11 @@
+@@ -287,7 +332,7 @@
  	if(doexec(cmd) < 0)
  		showerrstr("Cannot rename file/directory");
  	else
 -		loaddirs();
 +		loaddirs(0);
+ 	free(qtp);
+ 	free(qfp);
+ 	free(tp);
+@@ -295,7 +340,7 @@
  }
  
  int
@@ -599,7 +604,7 @@ diff 8ffa802e29ca42eb54cc4b10f8c756ba6275e801 uncommitted
  {
  	char *f;
  	int e;
-@@ -285,11 +331,14 @@
+@@ -302,11 +347,14 @@
  
  	f = smprint("%s/%s", path, name);
  	e = access(f, 0)==0;
@@ -618,7 +623,7 @@ diff 8ffa802e29ca42eb54cc4b10f8c756ba6275e801 uncommitted
  		redraw();
  	}
  	free(f);
-@@ -299,28 +348,21 @@
+@@ -316,28 +364,21 @@
  void
  initcolors(void)
  {
@@ -661,7 +666,7 @@ diff 8ffa802e29ca42eb54cc4b10f8c756ba6275e801 uncommitted
  }
  
  Image*
-@@ -351,6 +393,8 @@
+@@ -368,6 +409,8 @@
  	iup    = loadicon(big, updata, sizeof updata);
  	inewfile = loadicon(big, newfiledata, sizeof newfiledata);
  	inewfolder = loadicon(big, newfolderdata, sizeof newfolderdata);
@@ -670,7 +675,7 @@ diff 8ffa802e29ca42eb54cc4b10f8c756ba6275e801 uncommitted
  }
  
  char*
-@@ -371,7 +415,7 @@
+@@ -388,7 +431,7 @@
  
  	p->x += Toolpadding;
  	r = Rect(p->x, p->y, p->x+16, p->y+16);
@@ -679,7 +684,7 @@ diff 8ffa802e29ca42eb54cc4b10f8c756ba6275e801 uncommitted
  	p->x += 16+Toolpadding;
  	return r;
  }
-@@ -384,12 +428,12 @@
+@@ -401,12 +444,12 @@
  
  	s = t;
  	if(*s && (p.x+stringwidth(font, s)) > n){
@@ -694,7 +699,7 @@ diff 8ffa802e29ca42eb54cc4b10f8c756ba6275e801 uncommitted
  	}
  	return p;
  }
-@@ -412,7 +456,7 @@
+@@ -429,7 +472,7 @@
  	p = addpt(viewr.min, Pt(Toolpadding, Toolpadding));
  	p.y += n*lineh;
  	r = Rpt(p, addpt(p, Pt(Dx(viewr)-2*Toolpadding, lineh)));
@@ -703,7 +708,7 @@ diff 8ffa802e29ca42eb54cc4b10f8c756ba6275e801 uncommitted
  	t = mdate(d);
  	snprint(buf, sizeof buf, "%*lld  %s", sizew, d.length, t);
  	free(t);
-@@ -419,12 +463,12 @@
+@@ -436,12 +479,12 @@
  	img = (d.qid.type&QTDIR) ? folder : file;
  	p.y -= Padding;
  	dy = (lineh-12)/2;
@@ -718,7 +723,7 @@ diff 8ffa802e29ca42eb54cc4b10f8c756ba6275e801 uncommitted
  }
  
  void
-@@ -445,22 +489,25 @@
+@@ -462,22 +505,25 @@
  	Point p;
  	int i, h, y;
  
@@ -752,7 +757,7 @@ diff 8ffa802e29ca42eb54cc4b10f8c756ba6275e801 uncommitted
  	if(ndirs>0){
  		h = ((double)nlines/ndirs)*Dy(scrollr);
  		y = ((double)offset/ndirs)*Dy(scrollr);
-@@ -467,10 +514,11 @@
+@@ -484,10 +530,11 @@
  		scrposr = Rect(scrollr.min.x, scrollr.min.y+y, scrollr.max.x-1, scrollr.min.y+y+h);
  	}else
  		scrposr = Rect(scrollr.min.x, scrollr.min.y, scrollr.max.x-1, scrollr.max.y);
@@ -765,7 +770,7 @@ diff 8ffa802e29ca42eb54cc4b10f8c756ba6275e801 uncommitted
  	flushimage(display, 1);
  }
  
-@@ -511,18 +559,42 @@
+@@ -528,18 +575,42 @@
  }
  
  void
@@ -811,7 +816,7 @@ diff 8ffa802e29ca42eb54cc4b10f8c756ba6275e801 uncommitted
  	viewr.min.x += Scrollwidth;
  	viewr.min.y = toolr.max.y+1;
  	nlines = Dy(viewr)/lineh;
-@@ -543,17 +615,38 @@
+@@ -560,17 +631,38 @@
  	case Kpgdown:
  		scrolldown(nlines);
  		break;
@@ -854,7 +859,7 @@ diff 8ffa802e29ca42eb54cc4b10f8c756ba6275e801 uncommitted
  	}
  }
  
-@@ -562,9 +655,8 @@
+@@ -579,9 +671,8 @@
  {
  	Point p;
  
@@ -866,7 +871,7 @@ diff 8ffa802e29ca42eb54cc4b10f8c756ba6275e801 uncommitted
  	return p;
  }
  
-@@ -584,63 +676,36 @@
+@@ -601,66 +692,36 @@
  void
  evtmouse(Mouse m)
  {
@@ -913,6 +918,9 @@ diff 8ffa802e29ca42eb54cc4b10f8c756ba6275e801 uncommitted
 -				offset = scrollclamp((m.xy.y - scrollr.min.y) * ndirs/Dy(scrollr));
 -				redraw();
 -			}
+-		}else if(ptinrect(m.xy, pathr)){
+-			loaddirs();
+-			redraw();
 -		}
 -	}if((m.buttons&4) && oldbuttons == 0){
 -		if(scrolling){
@@ -944,7 +952,7 @@ diff 8ffa802e29ca42eb54cc4b10f8c756ba6275e801 uncommitted
  		}else if(ptinrect(m.xy, newdirr)){
  			m.xy = cept("Create directory");
  			if(enter("Create directory", buf, sizeof buf, mctl, kctl, nil)>0){
-@@ -661,11 +726,40 @@
+@@ -681,11 +742,40 @@
  			if(d.qid.type & QTDIR){
  				cd(d.name);
  				redraw();
@@ -988,7 +996,7 @@ diff 8ffa802e29ca42eb54cc4b10f8c756ba6275e801 uncommitted
  	}else if(m.buttons&8)
  		scrollup(Slowscroll);
  	else if(m.buttons&16)
-@@ -741,7 +835,7 @@
+@@ -761,7 +851,7 @@
  	alts[Eresize].c = mctl->resizec;
  	alts[Ekeyboard].c = kctl->c;
  	readhome();

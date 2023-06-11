@@ -1,7 +1,7 @@
-diff c653369e862d2b2235133cfcb0391bc4809ce4b1 uncommitted
---- a/include/npe/SDL2/SDL_keycode.h
-+++ b/include/npe/SDL2/SDL_keycode.h
-@@ -79,28 +79,30 @@
+diff 7a8cd4cb0b312e13a88d4d3175a839a2536ee4e3 uncommitted
+--- a/./include/npe/SDL2/SDL_keycode.h
++++ b/./include/npe/SDL2/SDL_keycode.h
+@@ -88,15 +88,18 @@
  
  	SDLK_LALT = Kalt,
  	SDLK_RALT = Kaltgr, /* FIXME what about keyboards without it? */
@@ -17,14 +17,18 @@ diff c653369e862d2b2235133cfcb0391bc4809ce4b1 uncommitted
 +	SDLK_RCTRL = Krctl,
 +	SDLK_CAPSLOCK = Kcaps,
  
++
  	/* FIXME not bound to anything */
  	SDLK_UNKNOWN = -99999,
 -	SDLK_CAPSLOCK,
  	SDLK_KP_ENTER,
  	SDLK_AC_BACK,
+ 	SDLK_PAUSE,
+@@ -118,16 +121,15 @@
+ 	SDLK_KP_3,
+ 	SDLK_KP_0,
  
 -	/* FIXME no distinction */
-+	KMOD_NONE = 0,
  	KMOD_LSHIFT = 1<<0,
 -	KMOD_RSHIFT = KMOD_LSHIFT,
 -	KMOD_LCTRL = 1<<1,
@@ -44,9 +48,9 @@ diff c653369e862d2b2235133cfcb0391bc4809ce4b1 uncommitted
  
  	KMOD_SHIFT = KMOD_LSHIFT|KMOD_RSHIFT,
  	KMOD_CTRL = KMOD_LCTRL|KMOD_RCTRL,
---- a/include/npe/SDL2/SDL_scancode.h
-+++ b/include/npe/SDL2/SDL_scancode.h
-@@ -107,6 +107,7 @@
+--- a/./include/npe/SDL2/SDL_scancode.h
++++ b/./include/npe/SDL2/SDL_scancode.h
+@@ -110,6 +110,7 @@
  	SDL_SCANCODE_MUTE = 0x7f,
  	SDL_SCANCODE_VOLUMEUP,
  	SDL_SCANCODE_VOLUMEDOWN,
@@ -54,9 +58,9 @@ diff c653369e862d2b2235133cfcb0391bc4809ce4b1 uncommitted
  
  	SDL_SCANCODE_LCTRL = 0xe0,
  	SDL_SCANCODE_LSHIFT,
---- a/libnpe_sdl2/events.c
-+++ b/libnpe_sdl2/events.c
-@@ -206,6 +206,12 @@
+--- a/./libnpe_sdl2/events.c
++++ b/./libnpe_sdl2/events.c
+@@ -246,6 +246,12 @@
  	if(r == Kalt) return SDL_SCANCODE_LALT;
  	if(r == Kmod4) return SDL_SCANCODE_LGUI;
  	if(r == Kaltgr) return SDL_SCANCODE_RALT;
@@ -69,32 +73,43 @@ diff c653369e862d2b2235133cfcb0391bc4809ce4b1 uncommitted
  
  	if(r >= (KF|1) && r <= (KF|12)) return SDL_SCANCODE_F1 + r - (KF|1);
  
-@@ -294,6 +300,8 @@
+@@ -312,7 +318,7 @@
+ 		switch(buf[0]){
+ 		case 'c':
+ 			if(chartorune(&r, buf+1) > 0 && r != Runeerror){
+-				if(ISTEXT(r))
++				if(npe_sdl.textinput && ISTEXT(r))
+ 					o = r;
+ 				send(salt[Ckey].c, &o);
+ 				send(salt[Ckeytype].c, &t);
+@@ -332,8 +338,10 @@
+ 						/* FIXME: does this work in both native AND drawterm? */
+ 						write(kbin, "\x46", 1);
  						kmod |= KMOD_LALT;
- 					}else if (r == Kshift)
+-					}else if (r == Kshift)
++					}else if(r == Kshift)
  						kmod |= KMOD_LSHIFT;
-+					else if (r == Kcaps)
++					else if(r == Kcaps)
 +						kmod |= KMOD_CAPS;
  					else if(r == Kctl)
  						kmod |= KMOD_LCTRL;
  					else if(r == Kaltgr)
-@@ -300,6 +308,10 @@
+@@ -340,7 +348,11 @@
  						kmod |= KMOD_RALT;
  					else if(r == Kmod4)
  						kmod |= KMOD_LGUI;
+-					else{
 +					else if(r == Krshift)
 +						kmod |= KMOD_RSHIFT;
 +					else if(r == Krctl)
 +						kmod |= KMOD_RCTRL;
- 					else{
++					else if((r & KF) == 0){
  						o = npe_sdl.textinput ? r : tolowerrune(r);
  						continue;
-@@ -319,10 +331,20 @@
- 				if(utfrune(buf+1, r) == nil){
- 					if(r == Kalt)
+ 					}
+@@ -361,8 +373,18 @@
  						kmod &= ~KMOD_LALT;
--					else if(r == Kshift)
-+					else if (r == Kshift)
+ 					else if(r == Kshift)
  						kmod &= ~KMOD_LSHIFT;
 +					else if (r == Kcaps)
 +						kmod &= ~KMOD_CAPS;
@@ -108,6 +123,6 @@ diff c653369e862d2b2235133cfcb0391bc4809ce4b1 uncommitted
 +						kmod &= ~KMOD_RSHIFT;
 +					else if(r == Krctl)
 +						kmod &= ~KMOD_RCTRL;
- 					else{
- 						t = Rup;
- 						send(salt[Ckey].c, &r);
+ 
+ 					t = Rup;
+ 					send(salt[Ckey].c, &r);

@@ -1,6 +1,6 @@
 diff 7a8cd4cb0b312e13a88d4d3175a839a2536ee4e3 uncommitted
---- a/./include/npe/SDL2/SDL_keycode.h
-+++ b/./include/npe/SDL2/SDL_keycode.h
+--- a/include/npe/SDL2/SDL_keycode.h
++++ b/include/npe/SDL2/SDL_keycode.h
 @@ -88,15 +88,18 @@
  
  	SDLK_LALT = Kalt,
@@ -48,8 +48,8 @@ diff 7a8cd4cb0b312e13a88d4d3175a839a2536ee4e3 uncommitted
  
  	KMOD_SHIFT = KMOD_LSHIFT|KMOD_RSHIFT,
  	KMOD_CTRL = KMOD_LCTRL|KMOD_RCTRL,
---- a/./include/npe/SDL2/SDL_scancode.h
-+++ b/./include/npe/SDL2/SDL_scancode.h
+--- a/include/npe/SDL2/SDL_scancode.h
++++ b/include/npe/SDL2/SDL_scancode.h
 @@ -110,6 +110,7 @@
  	SDL_SCANCODE_MUTE = 0x7f,
  	SDL_SCANCODE_VOLUMEUP,
@@ -58,8 +58,8 @@ diff 7a8cd4cb0b312e13a88d4d3175a839a2536ee4e3 uncommitted
  
  	SDL_SCANCODE_LCTRL = 0xe0,
  	SDL_SCANCODE_LSHIFT,
---- a/./libnpe_sdl2/events.c
-+++ b/./libnpe_sdl2/events.c
+--- a/libnpe_sdl2/events.c
++++ b/libnpe_sdl2/events.c
 @@ -246,6 +246,12 @@
  	if(r == Kalt) return SDL_SCANCODE_LALT;
  	if(r == Kmod4) return SDL_SCANCODE_LGUI;
@@ -73,16 +73,31 @@ diff 7a8cd4cb0b312e13a88d4d3175a839a2536ee4e3 uncommitted
  
  	if(r >= (KF|1) && r <= (KF|12)) return SDL_SCANCODE_F1 + r - (KF|1);
  
-@@ -312,7 +318,7 @@
+@@ -284,7 +290,7 @@
+ kbdproc(void *)
+ {
+ 	char buf[128], buf2[128], *s;
+-	int kfd, n, kbin, t;
++	int kfd, n, kbin, t, ign;
+ 	Rune r, o;
+ 
+ 	threadsetname("kbdproc");
+@@ -312,8 +318,12 @@
  		switch(buf[0]){
  		case 'c':
  			if(chartorune(&r, buf+1) > 0 && r != Runeerror){
 -				if(ISTEXT(r))
+-					o = r;
++				if(ign){
++					ign = 0;
++					break;
++				}
 +				if(npe_sdl.textinput && ISTEXT(r))
- 					o = r;
++					o = tolowerrune(r);
  				send(salt[Ckey].c, &o);
  				send(salt[Ckeytype].c, &t);
-@@ -332,8 +338,10 @@
+ 				t = Rrepeat;
+@@ -332,8 +342,10 @@
  						/* FIXME: does this work in both native AND drawterm? */
  						write(kbin, "\x46", 1);
  						kmod |= KMOD_LALT;
@@ -94,20 +109,29 @@ diff 7a8cd4cb0b312e13a88d4d3175a839a2536ee4e3 uncommitted
  					else if(r == Kctl)
  						kmod |= KMOD_LCTRL;
  					else if(r == Kaltgr)
-@@ -340,7 +348,11 @@
+@@ -340,14 +352,21 @@
  						kmod |= KMOD_RALT;
  					else if(r == Kmod4)
  						kmod |= KMOD_LGUI;
--					else{
 +					else if(r == Krshift)
 +						kmod |= KMOD_RSHIFT;
 +					else if(r == Krctl)
 +						kmod |= KMOD_RCTRL;
-+					else if((r & KF) == 0){
++					/*
+ 					else{
  						o = npe_sdl.textinput ? r : tolowerrune(r);
  						continue;
  					}
-@@ -361,8 +373,18 @@
++					*/
+ 					o = r;
+ 					send(salt[Ckey].c, &r);
+ 					send(salt[Ckeytype].c, &t);
+ 					t = Rrepeat;
++					ign = 1;
+ 				}
+ 			}
+ 			break;
+@@ -361,12 +380,23 @@
  						kmod &= ~KMOD_LALT;
  					else if(r == Kshift)
  						kmod &= ~KMOD_LSHIFT;
@@ -126,3 +150,8 @@ diff 7a8cd4cb0b312e13a88d4d3175a839a2536ee4e3 uncommitted
  
  					t = Rup;
  					send(salt[Ckey].c, &r);
+ 					send(salt[Ckeytype].c, &t);
++					ign = 0;
+ 				}
+ 			}
+ 			break;

@@ -1,0 +1,75 @@
+diff 0216663a6e9d723eadc6692c656dd98b2964493b uncommitted
+--- a/a.h
++++ b/a.h
+@@ -12,7 +12,7 @@
+ 
+ enum 
+ {
+-	Maxslides = 64,
++	Maxslides = 128,
+ 	Maxlines  = 16 
+ };
+ 
+--- a/spit.c
++++ b/spit.c
+@@ -15,6 +15,7 @@
+ int			curslide;
+ Image		*bol;
+ Image		*bullet;
++int			nodraw;
+ 
+ void
+ ladd(Lines *l, char *s)
+@@ -273,6 +274,22 @@
+ }
+ 
+ void
++barf(void)
++{
++	int fd;
++	char path[64];
++	Image **i;
++
++	for(i=slides; i<slides+nslides+1; i++){
++		snprint(path, sizeof path, "spit.%03zd.bit", i - slides);
++		if((fd = create(path, OWRITE, 0644)) < 0)
++			sysfatal("open: %r");
++		writeimage(fd, *i, 0);
++		close(fd);
++	}
++}
++
++void
+ redraw(void)
+ {
+ 	draw(screen, screen->r, slides[curslide], nil, ZP);
+@@ -354,7 +371,7 @@
+ void
+ usage(void)
+ {
+-	fprint(2, "%s [-f font] [-F fixedfont] <filename>\n", argv0);
++	fprint(2, "%s [-n] [-f font] [-F fixedfont] <filename>\n", argv0);
+ 	exits("usage");
+ }
+ 
+@@ -381,6 +398,9 @@
+ 	case 'F':
+ 		fname = EARGF(usage());
+ 		break;
++	case 'n':
++		nodraw = 1;
++		break;
+ 	default:
+ 		usage();
+ 	}ARGEND;
+@@ -408,6 +428,10 @@
+ 	initstyle(tname, fname);
+ 	initimages();
+ 	render(f);
++	if(nodraw){
++		barf();
++		threadexitsall(nil);
++	}
+ 	resize();
+ 	for(;;){
+ 		switch(alt(alts)){

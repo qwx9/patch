@@ -1,104 +1,4 @@
-diff a50ea54acc46b5ee57b463ef3e881515cc962c00 uncommitted
---- a/alert.c
-+++ b/alert.c
-@@ -19,11 +19,11 @@
- alert(const char *title, const char *message, const char *err, Mousectl *mctl, Keyboardctl *kctl)
- {
- 	Alt alts[3];
--	Rectangle r, sc;
-+	Rectangle r;
- 	Point o, p;
--	Image *b, *save, *bg, *fg;
-+	Image *bg, *fg;
- 	Font *tf, *mf;
--	int done, h, w, tw, mw, ew;
-+	int i, h, w, tw, mw, ew;
- 	Mouse m;
- 	Rune k;
- 
-@@ -46,8 +46,6 @@
- 	mf = openfont(display, Messagefont);
- 	if(mf==nil)
- 		sysfatal("openfont: %r");
--	done = 0;
--	save = nil;
- 	h = Padding+tf->height+mf->height+Padding;
- 	if(err != nil)
- 		h += mf->height;
-@@ -55,56 +53,25 @@
- 	mw = stringwidth(mf, message);
- 	ew = err != nil ? stringwidth(mf, err) : 0;
- 	w = Padding+max(tw, max(mw, ew))+Padding;
--	b = screen;
--	sc = b->clipr;
--	replclipr(b, 0, b->r);
--	while(!done){
--		o = addpt(screen->r.min, Pt((Dx(screen->r)-w)/2, (Dy(screen->r)-h)/2));
--		r = Rect(o.x, o.y, o.x+w, o.y+h);
--		if(save==nil){
--			save = allocimage(display, r, b->chan, 0, DNofill);
--			if(save==nil)
--				break;
--			draw(save, r, b, nil, r.min);
--		}
--		draw(b, r, bg, nil, ZP);
--		border(b, r, 2, fg, ZP);
--		p = addpt(o, Pt(Padding, Padding));
--		string(b, p, fg, ZP, tf, title);
--		p.y += tf->height;
--		string(b, p, fg, ZP, mf, message);
--		if(err != nil){
--			p.x = o.x + Padding;
--			p.y += mf->height;
--			string(b, p, fg, ZP, mf, err);
--		}
--		flushimage(display, 1);
--		if(b!=screen || !eqrect(screen->clipr, sc)){
--			freeimage(save);
--			save = nil;
--		}
--		b = screen;
--		sc = b->clipr;
--		replclipr(b, 0, b->r);
--		switch(alt(alts)){
--		default:
--			continue;
-+	o = addpt(screen->r.min, Pt((Dx(screen->r)-w)/2, (Dy(screen->r)-h)/2));
-+	r = Rect(o.x, o.y, o.x+w, o.y+h);
-+	draw(screen, r, bg, nil, ZP);
-+	border(screen, r, 2, fg, ZP);
-+	p = addpt(o, Pt(Padding, Padding));
-+	string(screen, p, fg, ZP, tf, title);
-+	p.y += tf->height;
-+	string(screen, p, fg, ZP, mf, message);
-+	if(err != nil){
-+		p.x = o.x + Padding;
-+		p.y += mf->height;
-+		string(screen, p, fg, ZP, mf, err);
-+	}
-+	flushimage(display, 1);
-+	for(;;){
-+		i = alt(alts);
-+		if(i == 1 || i == 0 && m.buttons != 0)
- 			break;
--		case 1:
--			done = (k=='\n' || k==Kesc);
--			break;
--		case 0:
--			done = m.buttons&1 && ptinrect(m.xy, r);
--			break;
--		}
--		if(save){
--			draw(b, save->r, save, nil, save->r.min);
--			freeimage(save);
--			save = nil;
--		}
--			
- 	}
--	replclipr(b, 0, sc);
- 	freeimage(bg);
- 	freeimage(fg);
- 	freefont(tf);
+diff d57a09f05c237d004770493258c206bbe9916681 uncommitted
 --- a/icons.h
 +++ b/icons.h
 @@ -420,3 +420,181 @@
@@ -420,7 +320,7 @@ diff a50ea54acc46b5ee57b463ef3e881515cc962c00 uncommitted
 +Image*	ereadcol(char*);
 --- a/vdir.c
 +++ b/vdir.c
-@@ -20,6 +20,13 @@
+@@ -21,6 +21,13 @@
  	Slowscroll = 10,
  };
  
@@ -434,7 +334,7 @@ diff a50ea54acc46b5ee57b463ef3e881515cc962c00 uncommitted
  enum
  {
  	Emouse,
-@@ -47,6 +54,8 @@
+@@ -50,6 +57,8 @@
  Rectangle homer;
  Rectangle upr;
  Rectangle cdr;
@@ -443,7 +343,7 @@ diff a50ea54acc46b5ee57b463ef3e881515cc962c00 uncommitted
  Rectangle newdirr;
  Rectangle newfiler;
  Rectangle viewr;
-@@ -60,6 +69,8 @@
+@@ -63,6 +72,8 @@
  Image *iup;
  Image *inewfile;
  Image *inewfolder;
@@ -452,15 +352,15 @@ diff a50ea54acc46b5ee57b463ef3e881515cc962c00 uncommitted
  Image *toolbg;
  Image *toolfg;
  Image *viewbg;
-@@ -68,6 +79,7 @@
+@@ -71,6 +82,7 @@
  Image *selfg;
  Image *scrollbg;
  Image *scrollfg;
 +Image *fb;
+ Image *high;
  int sizew;
  int lineh;
- int nlines;
-@@ -121,8 +133,10 @@
+@@ -124,8 +136,10 @@
  	return 1;
  }
  
@@ -472,7 +372,7 @@ diff a50ea54acc46b5ee57b463ef3e881515cc962c00 uncommitted
  {
  	int fd, i;
  	vlong m;
-@@ -135,14 +149,11 @@
+@@ -138,14 +152,11 @@
  	if(dirs!=nil)
  		free(dirs);
  	ndirs = dirreadall(fd, &dirs);
@@ -492,7 +392,7 @@ diff a50ea54acc46b5ee57b463ef3e881515cc962c00 uncommitted
  	close(fd);
  	m = 1;
  	for(i=0; i < ndirs; i++){
-@@ -149,14 +160,47 @@
+@@ -152,14 +163,47 @@
  		if(dirs[i].length>m)
  			m=dirs[i].length;
  	}
@@ -542,15 +442,15 @@ diff a50ea54acc46b5ee57b463ef3e881515cc962c00 uncommitted
  }
  
  void
-@@ -164,6 +208,7 @@
+@@ -167,6 +211,7 @@
  {
- 	char newpath[256] = {0};
+ 	char newpath[4096] = {0};
  
 +	pushback();
  	if(dir == nil)
- 		snprint(newpath, sizeof path, home);
+ 		snprint(newpath, sizeof newpath, home);
  	else if(dir[0] == '/')
-@@ -174,7 +219,7 @@
+@@ -177,7 +222,7 @@
  		showerrstr("Directory does not exist");
  	else
  		snprint(path, sizeof path, abspath(path, newpath));
@@ -559,7 +459,7 @@ diff a50ea54acc46b5ee57b463ef3e881515cc962c00 uncommitted
  }
  
  void
-@@ -194,7 +239,7 @@
+@@ -197,7 +242,7 @@
  		goto cleanup;
  	}
  	close(fd);
@@ -568,7 +468,7 @@ diff a50ea54acc46b5ee57b463ef3e881515cc962c00 uncommitted
  cleanup:
  	free(p);
  }
-@@ -216,7 +261,7 @@
+@@ -219,7 +264,7 @@
  		goto cleanup;
  	}
  	close(fd);
@@ -577,7 +477,12 @@ diff a50ea54acc46b5ee57b463ef3e881515cc962c00 uncommitted
  cleanup:
  	free(p);
  }
-@@ -267,7 +312,7 @@
+@@ -272,11 +317,11 @@
+ 		return;
+ 	p = smprint("%s/%s", path, d.name);
+ 	qp = quotestrdup(p);
+-	snprint(cmd, sizeof cmd, "rm -r %s >/dev/null >[2=1]", qp);
++	snprint(cmd, sizeof cmd, "rm -r \'%s\' >/dev/null >[2=1]", qp);
  	if(doexec(cmd) < 0)
  		showerrstr("Cannot remove file/directory");
  	else
@@ -586,7 +491,12 @@ diff a50ea54acc46b5ee57b463ef3e881515cc962c00 uncommitted
  	free(qp);
  	free(p);
  }
-@@ -287,7 +332,7 @@
+@@ -292,11 +337,11 @@
+ 	qfp = quotestrdup(fp);
+ 	qtp = quotestrdup(tp);
+ 
+-	snprint(cmd, sizeof cmd, "mv %s %s >/dev/null >[2=1]", qfp, qtp);
++	snprint(cmd, sizeof cmd, "mv \'%s\' \'%s\' >/dev/null >[2=1]", qfp, qtp);
  	if(doexec(cmd) < 0)
  		showerrstr("Cannot rename file/directory");
  	else
@@ -595,7 +505,7 @@ diff a50ea54acc46b5ee57b463ef3e881515cc962c00 uncommitted
  	free(qtp);
  	free(qfp);
  	free(tp);
-@@ -295,7 +340,7 @@
+@@ -304,7 +349,7 @@
  }
  
  int
@@ -604,7 +514,7 @@ diff a50ea54acc46b5ee57b463ef3e881515cc962c00 uncommitted
  {
  	char *f;
  	int e;
-@@ -302,11 +347,14 @@
+@@ -311,11 +356,14 @@
  
  	f = smprint("%s/%s", path, name);
  	e = access(f, 0)==0;
@@ -617,13 +527,13 @@ diff a50ea54acc46b5ee57b463ef3e881515cc962c00 uncommitted
 +		else
 +			plumbsendtext(plumbfd, "vdir", nil, path, name);
 +	}else{
- 		alert("Error", "File does not exist anymore", nil, mctl, kctl);
+ 		alert("File does not exist anymore", nil, mctl, kctl);
 -		loaddirs();
 +		loaddirs(0);
  		redraw();
  	}
  	free(f);
-@@ -316,28 +364,21 @@
+@@ -325,30 +373,22 @@
  void
  initcolors(void)
  {
@@ -640,6 +550,7 @@ diff a50ea54acc46b5ee57b463ef3e881515cc962c00 uncommitted
 -		selfg  = display->black;
 -		scrollbg = allocimage(display, Rect(0,0,1,1), screen->chan, 1, 0x999999FF);
 -		scrollfg = display->white;
+-		high = allocimage(display, Rect(0,0,1,1), screen->chan, 1, DGreygreen);
 -	}else{
 -		toolbg = theme->back;
 -		toolfg = theme->text;
@@ -649,6 +560,7 @@ diff a50ea54acc46b5ee57b463ef3e881515cc962c00 uncommitted
 -		selfg  = theme->text;
 -		scrollbg = theme->border;
 -		scrollfg = theme->back;
+-		high = theme->high;
 -	}
 +	memset(&theme, 0, sizeof theme);
 +	theme.back = 0xEFEFEF;
@@ -663,10 +575,11 @@ diff a50ea54acc46b5ee57b463ef3e881515cc962c00 uncommitted
 +	selfg = allocimage(display, Rect(0,0,1,1), screen->chan, 1, theme.text << 8 | 0xff);
 +	scrollbg = allocimage(display, Rect(0,0,1,1), screen->chan, 1, theme.border << 8 | 0xff);
 +	scrollfg = allocimage(display, Rect(0,0,1,1), screen->chan, 1, theme.back << 8 | 0xff);
++	high = allocimage(display, Rect(0,0,1,1), screen->chan, 1, theme.high << 8 | 0xff);
  }
  
  Image*
-@@ -368,6 +409,8 @@
+@@ -379,6 +419,8 @@
  	iup    = loadicon(big, updata, sizeof updata);
  	inewfile = loadicon(big, newfiledata, sizeof newfiledata);
  	inewfolder = loadicon(big, newfolderdata, sizeof newfolderdata);
@@ -675,7 +588,7 @@ diff a50ea54acc46b5ee57b463ef3e881515cc962c00 uncommitted
  }
  
  char*
-@@ -388,7 +431,7 @@
+@@ -399,7 +441,7 @@
  
  	p->x += Toolpadding;
  	r = Rect(p->x, p->y, p->x+16, p->y+16);
@@ -684,7 +597,7 @@ diff a50ea54acc46b5ee57b463ef3e881515cc962c00 uncommitted
  	p->x += 16+Toolpadding;
  	return r;
  }
-@@ -401,12 +444,12 @@
+@@ -412,12 +454,12 @@
  
  	s = t;
  	if(*s && (p.x+stringwidth(font, s)) > n){
@@ -699,7 +612,7 @@ diff a50ea54acc46b5ee57b463ef3e881515cc962c00 uncommitted
  	}
  	return p;
  }
-@@ -429,7 +472,7 @@
+@@ -440,7 +482,7 @@
  	p = addpt(viewr.min, Pt(Toolpadding, Toolpadding));
  	p.y += n*lineh;
  	r = Rpt(p, addpt(p, Pt(Dx(viewr)-2*Toolpadding, lineh)));
@@ -708,7 +621,7 @@ diff a50ea54acc46b5ee57b463ef3e881515cc962c00 uncommitted
  	t = mdate(d);
  	snprint(buf, sizeof buf, "%*lld  %s", sizew, d.length, t);
  	free(t);
-@@ -436,12 +479,12 @@
+@@ -447,12 +489,12 @@
  	img = (d.qid.type&QTDIR) ? folder : file;
  	p.y -= Padding;
  	dy = (lineh-12)/2;
@@ -723,7 +636,7 @@ diff a50ea54acc46b5ee57b463ef3e881515cc962c00 uncommitted
  }
  
  void
-@@ -462,22 +505,25 @@
+@@ -473,22 +515,25 @@
  	Point p;
  	int i, h, y;
  
@@ -757,7 +670,7 @@ diff a50ea54acc46b5ee57b463ef3e881515cc962c00 uncommitted
  	if(ndirs>0){
  		h = ((double)nlines/ndirs)*Dy(scrollr);
  		y = ((double)offset/ndirs)*Dy(scrollr);
-@@ -484,10 +530,11 @@
+@@ -495,10 +540,11 @@
  		scrposr = Rect(scrollr.min.x, scrollr.min.y+y, scrollr.max.x-1, scrollr.min.y+y+h);
  	}else
  		scrposr = Rect(scrollr.min.x, scrollr.min.y, scrollr.max.x-1, scrollr.max.y);
@@ -770,7 +683,7 @@ diff a50ea54acc46b5ee57b463ef3e881515cc962c00 uncommitted
  	flushimage(display, 1);
  }
  
-@@ -528,18 +575,42 @@
+@@ -539,18 +585,42 @@
  }
  
  void
@@ -816,7 +729,7 @@ diff a50ea54acc46b5ee57b463ef3e881515cc962c00 uncommitted
  	viewr.min.x += Scrollwidth;
  	viewr.min.y = toolr.max.y+1;
  	nlines = Dy(viewr)/lineh;
-@@ -560,17 +631,38 @@
+@@ -571,17 +641,38 @@
  	case Kpgdown:
  		scrolldown(nlines);
  		break;
@@ -859,7 +772,7 @@ diff a50ea54acc46b5ee57b463ef3e881515cc962c00 uncommitted
  	}
  }
  
-@@ -579,9 +671,8 @@
+@@ -590,9 +681,8 @@
  {
  	Point p;
  
@@ -871,14 +784,14 @@ diff a50ea54acc46b5ee57b463ef3e881515cc962c00 uncommitted
  	return p;
  }
  
-@@ -601,66 +692,36 @@
+@@ -612,66 +702,36 @@
  void
  evtmouse(Mouse m)
  {
 -	int n, dy;
 +	int n;
  	Dir d;
- 	char buf[256] = {0};
+ 	char buf[4096] = {0};
  
 -	if(oldbuttons == 0 && m.buttons != 0 && ptinrect(m.xy, scrollr))
 +	m.xy = subpt(m.xy, screen->r.min);
@@ -902,7 +815,7 @@ diff a50ea54acc46b5ee57b463ef3e881515cc962c00 uncommitted
 -			d = dirs[offset+n];
 -			switch(menuhit(2, mctl, &menu2, nil)){
 -			case Mdelete:
--				rm(d.name);
+-				rm(d);
 -				redraw();
 -				break;
 -			case Mrename:
@@ -952,7 +865,7 @@ diff a50ea54acc46b5ee57b463ef3e881515cc962c00 uncommitted
  		}else if(ptinrect(m.xy, newdirr)){
  			m.xy = cept("Create directory");
  			if(enter("Create directory", buf, sizeof buf, mctl, kctl, nil)>0){
-@@ -681,11 +742,40 @@
+@@ -692,11 +752,40 @@
  			if(d.qid.type & QTDIR){
  				cd(d.name);
  				redraw();
@@ -970,7 +883,7 @@ diff a50ea54acc46b5ee57b463ef3e881515cc962c00 uncommitted
 +			menu2.lasthit = 0;
 +			switch(menuhit(2, mctl, &menu2, nil)){
 +			case Mdelete:
-+				rm(d.name);
++				rm(d);
 +				redraw();
 +				break;
 +			case Mrename:
@@ -996,9 +909,9 @@ diff a50ea54acc46b5ee57b463ef3e881515cc962c00 uncommitted
  	}else if(m.buttons&8)
  		scrollup(Slowscroll);
  	else if(m.buttons&16)
-@@ -761,7 +851,7 @@
- 	alts[Eresize].c = mctl->resizec;
- 	alts[Ekeyboard].c = kctl->c;
+@@ -795,7 +884,7 @@
+ 	alts[Eplumb].c = chancreate(sizeof(d), 1);
+ 	proccreate(plumbdir, alts[Eplumb].c, 4096);
  	readhome();
 -	loaddirs();
 +	loaddirs(1);

@@ -1,0 +1,35 @@
+diff d5938c597328adb8abb8785b4ac820ca0f094b6b uncommitted
+--- a/sys/src/games/doom/d_main.c
++++ b/sys/src/games/doom/d_main.c
+@@ -578,6 +578,7 @@
+ //
+ void IdentifyVersion (void)
+ {
++	int p;
+ 	char *wadfile, *slash;
+ 
+ 	if (M_CheckParm ("-shdev"))
+@@ -623,7 +624,22 @@
+ */
+ 	}
+ 
+-	if ( (wadfile = I_IdentifyWAD("doom2f.wad")) ) {
++	p = M_CheckParm ("-iwad");
++    if (p && p < myargc-1 && (wadfile = I_IdentifyWAD(myargv[p+1])) )
++    {
++ 		p = M_CheckParm ("-gamemode");
++ 		gamemode = commercial;
++		if (p && p < myargc-1)
++		{
++			if (!strcmp(myargv[p+1], "ultimate"))
++				gamemode = retail;
++			else if (!strcmp(myargv[p+1], "registered"))
++				gamemode = registered;
++			else if (!strcmp(myargv[p+1], "shareware"))
++				gamemode = shareware;
++		}
++		D_AddFile (wadfile);
++    } else if ( (wadfile = I_IdentifyWAD("doom2f.wad")) ) {
+ 		gamemode = commercial;
+ 		// C'est ridicule!
+ 		// Let's handle languages in config files, okay?

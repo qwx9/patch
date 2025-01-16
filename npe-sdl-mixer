@@ -1,0 +1,82 @@
+diff 85aac117f40895565f61eb703055a29df3c7539f uncommitted
+--- a/libnpe_sdl2/mixer.c
++++ b/libnpe_sdl2/mixer.c
+@@ -2,14 +2,8 @@
+ 
+ #include <SDL2/SDL_mixer.h>
+ 
+-int audiofd = -1;
+-int musicpipe[2] = {-1, -1};
+-
+ static int forkerpid = -1;
+-static int audiopid = -1;
+ 
+-void musicproc(void *);
+-
+ static int musicvol = 128;
+ static int musicpaused = 0;
+ 
+@@ -124,9 +118,6 @@
+ void
+ Mix_CloseAudio(void)
+ {
+-	if(audiopid > 0)
+-		postnote(PNPROC, audiopid, "quit");
+-	audiopid = -1;
+ }
+ 
+ int
+@@ -142,11 +133,6 @@
+ 		sysfatal("exec: %r\n");
+ 	}
+ 	waitpid();
+-	pipe(musicpipe);
+-	if(fork() == 0){
+-		musicproc(nil);
+-		sysfatal("exec musicproc: %r");
+-	}
+ 	return flags;
+ }
+ 
+@@ -209,12 +195,10 @@
+ 
+ 	n = loops;
+ 	while(loops == -1 || n-- > 0){
+-		switch(rfork(RFPROC|RFFDG)){
++		switch(rfork(RFPROC|RFCFDG)){
+ 		case 0:
+-			dup(musicpipe[1], 1);
+-			close(musicpipe[1]);
+-			close(musicpipe[0]);
+-			execl("/bin/games/midi", "midi", "-c", music->loc, nil);
++			close(2);
++			execl("/bin/play", "play", music->loc, nil);
+ 			sysfatal("exec: %r");
+ 			break;
+ 		default:
+@@ -261,25 +245,4 @@
+ 	if(freesrc)
+ 		SDL_RWclose(src);
+ 	return m;
+-}
+-
+-void
+-musicproc(void *)
+-{
+-	int fd;
+-	static char buf[8192];
+-	int n;
+-
+-	fd = open("/dev/audio", OWRITE);
+-	if(fd < 0)
+-		sysfatal("musicproc: %r");
+-
+-	close(musicpipe[1]);
+-	threadsetname("musicproc");
+-	for(;;){
+-		n = read(musicpipe[0], buf, sizeof buf);
+-		if(n < 0)
+-			threadexits(nil);
+-		write(fd, buf, n);
+-	}
+ }

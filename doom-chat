@@ -1,120 +1,38 @@
-diff -Naur a/sys/src/games/doom/hu_lib.c b/sys/src/games/doom/hu_lib.c
---- a/sys/src/games/doom/hu_lib.c	Wed Jan 18 02:13:23 2012
-+++ b/sys/src/games/doom/hu_lib.c	Wed Aug 12 17:58:24 2015
-@@ -315,22 +315,15 @@
- // wrapper function for handling general keyed input.
- // returns true if it ate the key
- boolean
--HUlib_keyInIText
--( hu_itext_t*	it,
--  unsigned char ch )
-+HUlib_keyInIText(hu_itext_t* it, uchar c)
+diff d5938c597328adb8abb8785b4ac820ca0f094b6b uncommitted
+--- a/sys/src/games/doom/hu_lib.c
++++ b/sys/src/games/doom/hu_lib.c
+@@ -320,7 +320,7 @@
+   unsigned char ch )
  {
--
--    if (ch >= ' ' && ch <= '_') 
--  	HUlib_addCharToTextLine(&it->l, (char) ch);
--    else 
--	if (ch == KEY_BACKSPACE) 
--	    HUlib_delCharFromIText(it);
--	else 
--	    if (ch != KEY_ENTER) 
--		return false; // did not eat key
--
--    return true; // ate the key
--
-+	if(isprint(c))
-+		HUlib_addCharToTextLine(&it->l, c);
-+	else if(c == KEY_BACKSPACE)
-+		HUlib_delCharFromIText(it);
-+	else if(c != KEY_ENTER)
-+		return false;
-+	return true;
- }
  
- void HUlib_drawIText(hu_itext_t* it)
-diff -Naur a/sys/src/games/doom/hu_stuff.c b/sys/src/games/doom/hu_stuff.c
---- a/sys/src/games/doom/hu_stuff.c	Wed Jan 18 02:13:23 2012
-+++ b/sys/src/games/doom/hu_stuff.c	Wed Aug 12 17:57:21 2015
-@@ -541,6 +541,9 @@
+-    if (ch >= ' ' && ch <= '_') 
++    if (ch >= ' ' && ch < '~') 
+   	HUlib_addCharToTextLine(&it->l, (char) ch);
+     else 
+ 	if (ch == KEY_BACKSPACE) 
+--- a/sys/src/games/doom/hu_stuff.c
++++ b/sys/src/games/doom/hu_stuff.c
+@@ -535,10 +535,10 @@
+ 	return false;
+         }
+         /* no break */
+-    case ev_char:
+-        break;
+     default:
          return false;
++    case ev_char:
++        break;
      }
  
-+	if(ev->type == ev_keyup)
-+		return false;
-+
      if (!chat_on)
-     {
- 	if (ev->data1 == HU_MSGREFRESH)
-diff -Naur a/sys/src/games/doom/i_video.c b/sys/src/games/doom/i_video.c
---- a/sys/src/games/doom/i_video.c	Wed Jul 29 13:45:35 2015
-+++ b/sys/src/games/doom/i_video.c	Wed Aug 12 18:03:33 2015
-@@ -5,10 +5,13 @@
- #include "v_video.h"	// screens[]
- #include "d_main.h"	// D_PostEvent
- 
-+#include <ctype.h>
- #include <draw.h>
- #include <mouse.h>
- #include <keyboard.h>
- 
-+extern boolean chat_on;
-+
- static int resized;
- static int mouseactive;
- 
-@@ -245,6 +248,7 @@
- 	int kfd, n;
- 	Rune r;
- 	event_t e;
-+	int shifton = 0, lastk = 0, laste = 0;
- 
- 	if((kfd = open("/dev/kbd", OREAD)) < 0)
- 		sysfatal("can't open kbd: %r");
-@@ -262,21 +266,32 @@
+--- a/sys/src/games/doom/i_video.c
++++ b/sys/src/games/doom/i_video.c
+@@ -290,7 +290,7 @@
  		case 'c':
  			chartorune(&r, buf+1);
  			if(r){
-+#define HU_INPUTTOGGLE 't'	/* FIXME */
-+				/* catch dup, but only once */
-+				if((chat_on && laste == 'k' && lastk == buf[1])
-+				|| !chat_on && r == HU_INPUTTOGGLE)
-+					continue;
- 				e.data1 = r;
+-				e.data1 = r;
++				e.data1 = runetokey(r);
  				e.type = ev_char;
  				D_PostEvent(&e);
  			}
- 			/* no break */
- 		default:
-+			laste = buf[0];
- 			continue;
- 		case 'k':
- 			s = buf+1;
- 			while(*s){
-+				lastk = *s;
- 				s += chartorune(&r, s);
- 				if(utfrune(buf2+1, r) == nil){
- 					if(e.data1 = runetokey(r)){
-+						if(chat_on && shifton && isprint(lastk))
-+							e.data1 = _toupper(e.data1);
- 						e.type = ev_keydown;
- 						D_PostEvent(&e);
-+						if(r == Kshift)
-+							shifton++;
- 					}
- 				}
- 			}
-@@ -289,11 +304,14 @@
- 					if(e.data1 = runetokey(r)){
- 						e.type = ev_keyup;
- 						D_PostEvent(&e);
-+						if(r == Kshift)
-+							shifton = 0;
- 					}
- 				}
- 			}
- 			break;
- 		}
-+		laste = buf[0];
- 		strcpy(buf2, buf);
- 	}
- 	close(kfd);

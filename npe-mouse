@@ -1,0 +1,91 @@
+diff 983970d87ccfc1045e72bb9d916c958d58a0bcb2 uncommitted
+--- a/include/npe/SDL2/SDL.h
++++ b/include/npe/SDL2/SDL.h
+@@ -153,6 +153,7 @@
+ void SDL_SetWindowMinimumSize(SDL_Window *window, int min_w, int min_h);
+ Uint32 SDL_GetWindowPixelFormat(SDL_Window *window);
+ SDL_bool SDL_PixelFormatEnumToMasks(Uint32 format, int *bpp, Uint32 *Rmask, Uint32 *Gmask, Uint32 *Bmask, Uint32 *Amask);
++Uint32 SDL_GetRelativeMouseState(int *x, int *y);
+ Uint32 SDL_GetMouseState(int *x, int *y);
+ SDL_bool SDL_IsTextInputActive(void);
+ void SDL_StartTextInput(void);
+--- a/libnpe_sdl2/_sdl.h
++++ b/libnpe_sdl2/_sdl.h
+@@ -17,6 +17,7 @@
+ 	Point center;
+ 	int mgrab;
+ 	Mouse m, om;
++	Point Δ;
+ 	int hints;
+ 	int mredraw;
+ 	int fullredraw;
+--- a/libnpe_sdl2/events.c
++++ b/libnpe_sdl2/events.c
+@@ -174,6 +174,11 @@
+ 
+ 		if(!eqpt(npe_sdl.m.xy, npe_sdl.om.xy)){
+ 			npe_sdl.mredraw = 1;
++			if(npe_sdl.mgrab){
++				npe_sdl.Δ.x += npe_sdl.m.xy.x - npe_sdl.om.xy.x;
++				npe_sdl.Δ.y += npe_sdl.m.xy.y - npe_sdl.om.xy.y;
++				npe_sdl.om.xy = npe_sdl.m.xy;
++			}
+ 			if(npe_sdl.m.buttons == npe_sdl.om.buttons){
+ 				e->type = SDL_MOUSEMOTION;
+ 				e->motion.state = npe_sdl.m.buttons;
+@@ -545,12 +550,15 @@
+ 	Mouse m;
+ 	for(;;){
+ 		recv(npe_sdl.mctl->c, &m);
++		send(salt[Cmouse].c, &m);
+ 		if(npe_sdl.mgrab == SDL_TRUE){
+ 			if(!ptinrect(m.xy, npe_sdl.grabout)){
+ 				moveto(npe_sdl.mctl, npe_sdl.center);
++				/* both events need to be pushed to make sure that the
++				 * next delta makes sense; this one is discarded */
+ 				m.xy = Pt(-1,-1);
++				send(salt[Cmouse].c, &m);
+ 			}
+ 		}
+-		send(salt[Cmouse].c, &m);
+ 	}
+ }
+--- a/libnpe_sdl2/sdl2.c
++++ b/libnpe_sdl2/sdl2.c
+@@ -1187,6 +1187,7 @@
+ 			clipr.max = addpt(clipr.min, oldcursor->i->r.max);
+ 			combinerect(&clipr, r);
+ 			replclipr(screen, 0, clipr);
++			npe_sdl.om.xy = npe_sdl.m.xy;
+ 		}
+ 	}
+ 	while(screen == nil && getwindow(display, Refnone) != 1)
+@@ -1195,7 +1196,6 @@
+ 	if(cursor != nil && showcursor)
+ 		draw(screen, r, cursor->i, cursor->m, ZP);
+ 	npe_sdl.mredraw = 0;
+-	npe_sdl.om.xy = npe_sdl.m.xy;
+ 	oldcursor = cursor;
+ 
+ 	flushimage(display, 1);
+@@ -1842,6 +1842,20 @@
+ SDL_GetRelativeMouseMode(void)
+ {
+ 	return npe_sdl.mgrab;
++}
++
++Uint32
++SDL_GetRelativeMouseState(int *x, int *y)
++{
++	Uint32 b;
++
++	b = SDL_GetGlobalMouseState(nil, nil);
++	if(x != nil)
++		*x = npe_sdl.Δ.x;
++	if(y != nil)
++		*y = npe_sdl.Δ.y;
++	npe_sdl.Δ = ZP;
++	return b;
+ }
+ 
+ SDL_mutex*

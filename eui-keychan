@@ -1,0 +1,64 @@
+diff 3167f5f7e3d2363ab57a107c838e1c5ef1fcda80 uncommitted
+--- a/sys/src/games/eui.c
++++ b/sys/src/games/eui.c
+@@ -9,6 +9,7 @@
+ typedef struct Kfn Kfn;
+ 
+ u64int keys, keys2;
++Channel *keychan;
+ int trace, paused;
+ int savereq, loadreq;
+ QLock pauselock;
+@@ -57,7 +68,6 @@
+ 	Kfn *kp;
+ 
+ 	j = 1;
+-
+ 	for(;;){
+ 		n = read(0, buf, sizeof(buf) - 1);
+ 		if(n <= 0)
+@@ -64,13 +74,18 @@
+ 			sysfatal("read: %r");
+ 		buf[n] = 0;
+ 		n = getfields(buf, down, nelem(down), 1, " ");
++		if(n <= 0)
++			continue;
+ 		k = 0;
+ 		for(n--; n >= 0; n--){
+ 			s = down[n];
+-			if(strcmp(s, "joy1") == 0)
+-				j = 1;
+-			else if(strcmp(s, "joy2") == 0)
+-				j = 2;
++			if(strncmp(s, "joy", 3) == 0){
++				if(strcmp(s, "2 ") == 0)
++					j = 2;
++				else
++					j = 1;
++				continue;
++			}
+ 			for(kp=kkn.n; kp!=nil; kp=kp->n){
+ 				if(strcmp(kp->joyk, s) == 0)
+ 					k |= kp->k;
+@@ -78,8 +93,11 @@
+ 		}
+ 		if(j == 2)
+ 			keys2 = k;
+-		else
++		else{
+ 			keys = k;
++			if(keychan != nil)
++				nbsendul(keychan, k);
++		}
+ 	}
+ }
+ 
+@@ -162,6 +180,8 @@
+ 		if((k & ax1) == ax1)
+ 			k &= ~ax1;
+ 		keys = k;
++		if(keychan != nil)
++			nbsendul(keychan, k);
+ 	}
+ }
+ 

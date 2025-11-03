@@ -1,0 +1,65 @@
+diff b5344401da6ab27d87a5b6e6defc65d73dfdf31e uncommitted
+--- a/sys/src/cmd/auth/cron.c
++++ b/sys/src/cmd/auth/cron.c
+@@ -114,33 +114,23 @@
+ }
+ 
+ static int
+-openlock(char *file)
+-{
+-	return create(file, ORDWR, 0600);
+-}
+-
+-static int
+ mklock(char *file)
+ {
+ 	int fd, try;
+-	Dir *dir;
++	Dir d;
+ 
+-	fd = openlock(file);
+-	if (fd >= 0) {
+-		/* make it a lock file if it wasn't */
+-		dir = dirfstat(fd);
+-		if (dir == nil)
+-			error("%s vanished: %r", file);
+-		dir->mode |= DMEXCL;
+-		dir->qid.type |= QTEXCL;
+-		dirfwstat(fd, dir);
+-		free(dir);
+-
+-		/* reopen in case it wasn't a lock file at last open */
+-		close(fd);
+-	}
+-	for (try = 0; try < 65 && (fd = openlock(file)) < 0; try++)
++	fd = -1;
++	nulldir(&d);
++	for (try = 0; try < 650; try++){
++		if((fd = create(file, ORDWR, 0600|DMEXCL)) >= 0){
++			/* In case the file existed but wasn't DMEXCL */
++			d.mode = DMEXCL|0600;
++			d.qid.type = QTEXCL;
++			dirfwstat(fd, &d);
++			break;
++		}
+ 		sleep(10*1000);
++	}
+ 	return fd;
+ }
+ 
+@@ -681,12 +671,10 @@
+ 	char *cap;
+ 	int rv;
+ 
+-	cap = mkcap(getuser(), new);
+-	if(cap == nil)
++	if((cap = mkcap(getuser(), new)) == nil)
+ 		return -1;
+-	rv = usecap(cap);
++	if((rv = usecap(cap)) != -1)
++		rv = newns(new, nil);
+ 	free(cap);
+-
+-	newns(new, nil);
+ 	return rv;
+ }

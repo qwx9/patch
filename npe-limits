@@ -1,0 +1,14 @@
+diff c68d3e221d9b372e250fcec40e01c6e5176abe8b uncommitted
+--- a/include/npe/limits.h
++++ b/include/npe/limits.h
+@@ -21,6 +21,10 @@
+ #define UINT8_MAX 0xff
+ #endif
+ 
++#ifndef INT8_MIN
++#define INT8_MIN (-INT8_MAX-1)
++#endif
++
+ #ifndef SHRT_MAX
+ #define SHRT_MAX 0x7fff
+ #endif

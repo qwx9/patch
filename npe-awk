@@ -1,0 +1,68 @@
+diff c68d3e221d9b372e250fcec40e01c6e5176abe8b uncommitted
+--- a/include/npe/errno.h
++++ b/include/npe/errno.h
+@@ -10,6 +10,7 @@
+ 	EINVAL = 22,
+ 	ERANGE = 34,
+ 	ENAMETOOLONG = 36,
++	EDOM = 1000,
+ };
+ 
+ extern int errno;
+--- a/include/npe/limits.h
++++ b/include/npe/limits.h
+@@ -13,6 +13,10 @@
+ #define SCHAR_MAX 0x7f
+ #endif
+ 
++#ifndef UCHAR_MAX
++#define UCHAR_MAX 0xff
++#endif
++
+ #ifndef INT8_MAX
+ #define INT8_MAX 0x7f
+ #endif
+@@ -19,6 +23,10 @@
+ 
+ #ifndef UINT8_MAX
+ #define UINT8_MAX 0xff
++#endif
++
++#ifndef INT8_MIN
++#define INT8_MIN (-INT8_MAX-1)
+ #endif
+ 
+ #ifndef SHRT_MAX
+--- a/include/npe/locale.h
++++ b/include/npe/locale.h
+@@ -1,4 +1,13 @@
+ #ifndef _npe_locale_h_
+ #define _npe_locale_h_
+ 
++#define LC_ALL		0
++#define LC_COLLATE	1
++#define LC_CTYPE	2
++#define LC_MONETARY	3
++#define LC_NUMERIC	4
++#define LC_TIME		5
++
++char	*setlocale(int category, const char *locale);
++
+ #endif
+--- a/include/npe/stdlib.h
++++ b/include/npe/stdlib.h
+@@ -14,10 +14,14 @@
+ #define RAND_MAX 32767
+ #define EXIT_SUCCESS 0
+ #define EXIT_FAILURE 1
++#define MB_CUR_MAX UTFmax
+ 
+ int setenv(char *name, char *value, int overwrite);
+ char *realpath(char *path, char *buffer);
+ int mkstemp(char *t);
+ div_t div(int n, int d);
++
++void *bsearch(const void *key, const void *base, size_t nmemb, size_t size,
++		int (*compar)(const void*, const void*));
+ 
+ #endif

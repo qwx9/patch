@@ -1,0 +1,48 @@
+diff c68d3e221d9b372e250fcec40e01c6e5176abe8b uncommitted
+--- a/include/npe/stdlib.h
++++ b/include/npe/stdlib.h
+@@ -20,4 +20,7 @@
+ int mkstemp(char *t);
+ div_t div(int n, int d);
+ 
++void *bsearch(const void *key, const void *base, size_t nmemb, size_t size,
++		int (*compar)(const void*, const void*));
++
+ #endif
+--- /dev/null
++++ b/libnpe/bsearch.c
+@@ -1,0 +1,24 @@
++#include <stdlib.h>
++
++void*
++bsearch(const void* key, const void* base, size_t nmemb, size_t size,
++		int (*compar)(const void*, const void*))
++{
++	long i, bot, top, new;
++	void *p;
++
++	bot = 0;
++	top = bot + nmemb - 1;
++	while(bot <= top){
++		new = (top + bot)/2;
++		p = (char *)base+new*size;
++		i = (*compar)(key, p);
++		if(i == 0)
++			return p;
++		if(i > 0)
++			bot = new + 1;
++		else
++			top = new - 1;
++	}
++	return 0;
++}
+--- a/libnpe/mkfile
++++ b/libnpe/mkfile
+@@ -15,6 +15,7 @@
+ 	_parg.$O\
+ 	acosh.$O\
+ 	basename.$O\
++	bsearch.$O\
+ 	cbrtf.$O\
+ 	clock_gettime.$O\
+ 	closedir.$O\

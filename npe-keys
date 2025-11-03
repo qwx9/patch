@@ -1,0 +1,114 @@
+diff c68d3e221d9b372e250fcec40e01c6e5176abe8b uncommitted
+--- a/include/npe/SDL2/SDL_keycode.h
++++ b/include/npe/SDL2/SDL_keycode.h
+@@ -88,15 +88,15 @@
+ 
+ 	SDLK_LALT = Kalt,
+ 	SDLK_RALT = Kaltgr, /* FIXME what about keyboards without it? */
+-	/* FIXME no distinction */
+ 	SDLK_LSHIFT = Kshift,
+-	SDLK_RSHIFT = SDLK_LSHIFT,
++	SDLK_RSHIFT = Krshift,
+ 	SDLK_LCTRL = Kctl,
+-	SDLK_RCTRL = '>', /* FIXME this is a hack */
++	SDLK_RCTRL = Krctl,
++	SDLK_CAPSLOCK = Kcaps,
+ 
++
+ 	/* FIXME not bound to anything */
+ 	SDLK_UNKNOWN = -99999,
+-	SDLK_CAPSLOCK,
+ 	SDLK_KP_ENTER,
+ 	SDLK_AC_BACK,
+ 	SDLK_PAUSE,
+@@ -118,16 +118,15 @@
+ 	SDLK_KP_3,
+ 	SDLK_KP_0,
+ 
+-	/* FIXME no distinction */
+ 	KMOD_LSHIFT = 1<<0,
+-	KMOD_RSHIFT = KMOD_LSHIFT,
+-	KMOD_LCTRL = 1<<1,
+-	KMOD_RCTRL = KMOD_LCTRL,
+-	KMOD_LALT = 1<<2,
+-	KMOD_RALT = 1<<3,
+-	KMOD_LGUI = 1<<4,
++	KMOD_RSHIFT = 1<<1,
++	KMOD_LCTRL = 1<<6,
++	KMOD_RCTRL = 1<<7,
++	KMOD_LALT = 1<<8,
++	KMOD_RALT = 1<<9,
++	KMOD_LGUI = 1<<10,
+ 	KMOD_RGUI = KMOD_LGUI,
+-	KMOD_CAPS = 1<<5,
++	KMOD_CAPS = 1<<13,
+ 
+ 	KMOD_SHIFT = KMOD_LSHIFT|KMOD_RSHIFT,
+ 	KMOD_CTRL = KMOD_LCTRL|KMOD_RCTRL,
+--- a/include/npe/SDL2/SDL_scancode.h
++++ b/include/npe/SDL2/SDL_scancode.h
+@@ -114,6 +114,7 @@
+ 	SDL_SCANCODE_MUTE = 0x7f,
+ 	SDL_SCANCODE_VOLUMEUP,
+ 	SDL_SCANCODE_VOLUMEDOWN,
++	SDL_SCANCODE_PLAYPAUSE,
+ 
+ 	SDL_SCANCODE_LCTRL = 0xe0,
+ 	SDL_SCANCODE_LSHIFT,
+--- a/libnpe_sdl2/events.c
++++ b/libnpe_sdl2/events.c
+@@ -286,6 +286,12 @@
+ 	if(r == Kalt) return SDL_SCANCODE_LALT;
+ 	if(r == Kmod4) return SDL_SCANCODE_LGUI;
+ 	if(r == Kaltgr) return SDL_SCANCODE_RALT;
++	if(r == Kcaps) return SDL_SCANCODE_CAPSLOCK;
++	if(r == Krshift) return SDL_SCANCODE_RSHIFT;
++	if(r == Krctl) return SDL_SCANCODE_RCTRL;
++	if(r == Kvolup) return SDL_SCANCODE_VOLUMEUP;
++	if(r == Kvoldn) return SDL_SCANCODE_VOLUMEDOWN;
++	if(r == Kpause) return SDL_SCANCODE_PLAYPAUSE;
+ 
+ 	if(r >= (KF|1) && r <= (KF|12)) return SDL_SCANCODE_F1 + r - (KF|1);
+ 
+@@ -490,8 +496,10 @@
+ 						/* FIXME: does this work in both native AND drawterm? */
+ 						write(kbin, "\x46", 1);
+ 						kmod |= KMOD_LALT;
+-					}else if (r == Kshift)
++					}else if(r == Kshift)
+ 						kmod |= KMOD_LSHIFT;
++					else if(r == Kcaps)
++						kmod |= KMOD_CAPS;
+ 					else if(r == Kctl)
+ 						kmod |= KMOD_LCTRL;
+ 					else if(r == Kaltgr)
+@@ -498,6 +506,10 @@
+ 						kmod |= KMOD_RALT;
+ 					else if(r == Kmod4)
+ 						kmod |= KMOD_LGUI;
++					else if(r == Krshift)
++						kmod |= KMOD_RSHIFT;
++					else if(r == Krctl)
++						kmod |= KMOD_RCTRL;
+ 					else{
+ 						o = npe_sdl.textinput ? r : tolowerrune(r);
+ 						continue;
+@@ -523,8 +535,18 @@
+ 						kmod &= ~KMOD_LALT;
+ 					else if(r == Kshift)
+ 						kmod &= ~KMOD_LSHIFT;
++					else if (r == Kcaps)
++						kmod &= ~KMOD_CAPS;
+ 					else if(r == Kctl)
+ 						kmod &= ~KMOD_LCTRL;
++					else if(r == Kaltgr)
++						kmod &= ~KMOD_RALT;
++					else if(r == Kmod4)
++						kmod &= ~KMOD_LGUI;
++					else if(r == Krshift)
++						kmod &= ~KMOD_RSHIFT;
++					else if(r == Krctl)
++						kmod &= ~KMOD_RCTRL;
+ 
+ 					t = Rup;
+ 					send(salt[Ckey].c, &r);

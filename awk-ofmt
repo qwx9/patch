@@ -1,0 +1,166 @@
+diff fdb503349c9e8007902b26211170cdc8dfa745af uncommitted
+--- a/sys/src/cmd/awk/awk.h
++++ b/sys/src/cmd/awk/awk.h
+@@ -61,6 +61,7 @@
+ 	uchar	ctype;		/* OCELL, OBOOL, OJUMP, etc. */
+ 	uchar	csub;		/* CCON, CTEMP, CFLD, etc. */
+ 	short	tval;		/* type info: STR|NUM|ARR|FCN|FLD|CON|DONTFREE */
++	int		conv;		/* "pointer" to last used conv */
+ 	char	*nval;		/* name, for variables only */
+ 	char	*sval;		/* string value */
+ 	Awkfloat fval;		/* value as number */
+@@ -91,7 +92,7 @@
+ #define	FCN	040	/* this is a function name */
+ #define FLD	0100	/* this is a field $1, $2, ... */
+ #define	REC	0200	/* this is $0 */
+-
++#define	FMT	0400	/* OFMT used instead of CONVFMT */
+ 
+ /* function types */
+ #define	FLENGTH	1
+--- a/sys/src/cmd/awk/lib.c
++++ b/sys/src/cmd/awk/lib.c
+@@ -49,8 +49,8 @@
+ int	argno	= 1;	/* current input argument number */
+ extern	Awkfloat *AARGC;
+ 
+-static Cell dollar0 = { OCELL, CFLD, REC|STR|DONTFREE, nil, EMPTY, 0.0 };
+-static Cell dollar1 = { OCELL, CFLD, FLD|STR|DONTFREE, nil, EMPTY, 0.0 };
++static Cell dollar0 = { OCELL, CFLD, REC|STR|DONTFREE, 0, nil, EMPTY, 0.0 };
++static Cell dollar1 = { OCELL, CFLD, FLD|STR|DONTFREE, 0, nil, EMPTY, 0.0 };
+ 
+ void recinit(unsigned int n)
+ {
+--- a/sys/src/cmd/awk/proto.h
++++ b/sys/src/cmd/awk/proto.h
+@@ -87,6 +87,7 @@
+ extern	char	*setsval(Cell *, char *);
+ extern	double	getfval(Cell *);
+ extern	char	*getsval(Cell *);
++extern	char	*getpssval(Cell *); /* for print */
+ extern	char	*tostring(char *);
+ extern	char	*qstring(char *, int);
+ 
+--- a/sys/src/cmd/awk/run.c
++++ b/sys/src/cmd/awk/run.c
+@@ -36,23 +36,23 @@
+ Node	*winner = nil;	/* root of parse tree */
+ Cell	*tmps;		/* free temporary cells for execution */
+ 
+-static Cell	truecell	={ OBOOL, BTRUE, NUM, 0, 0, 1.0 };
++static Cell	truecell	={ OBOOL, BTRUE, NUM, 0, 0, 0, 1.0 };
+ Cell	*True	= &truecell;
+-static Cell	falsecell	={ OBOOL, BFALSE, NUM, 0, 0, 0.0 };
++static Cell	falsecell	={ OBOOL, BFALSE, NUM, 0, 0, 0, 0.0 };
+ Cell	*False	= &falsecell;
+-static Cell	breakcell	={ OJUMP, JBREAK, NUM, 0, 0, 0.0 };
++static Cell	breakcell	={ OJUMP, JBREAK, NUM, 0, 0, 0, 0.0 };
+ Cell	*jbreak	= &breakcell;
+-static Cell	contcell	={ OJUMP, JCONT, NUM, 0, 0, 0.0 };
++static Cell	contcell	={ OJUMP, JCONT, NUM, 0, 0, 0, 0.0 };
+ Cell	*jcont	= &contcell;
+-static Cell	nextcell	={ OJUMP, JNEXT, NUM, 0, 0, 0.0 };
++static Cell	nextcell	={ OJUMP, JNEXT, NUM, 0, 0, 0, 0.0 };
+ Cell	*jnext	= &nextcell;
+-static Cell	nextfilecell	={ OJUMP, JNEXTFILE, NUM, 0, 0, 0.0 };
++static Cell	nextfilecell	={ OJUMP, JNEXTFILE, NUM, 0, 0, 0, 0.0 };
+ Cell	*jnextfile	= &nextfilecell;
+-static Cell	exitcell	={ OJUMP, JEXIT, NUM, 0, 0, 0.0 };
++static Cell	exitcell	={ OJUMP, JEXIT, NUM, 0, 0, 0, 0.0 };
+ Cell	*jexit	= &exitcell;
+-static Cell	retcell		={ OJUMP, JRET, NUM, 0, 0, 0.0 };
++static Cell	retcell		={ OJUMP, JRET, NUM, 0, 0, 0, 0.0 };
+ Cell	*jret	= &retcell;
+-static Cell	tempcell	={ OCELL, CTEMP, NUM|STR|DONTFREE, 0, EMPTY, 0.0 };
++static Cell	tempcell	={ OCELL, CTEMP, NUM|STR|DONTFREE, 0, 0, EMPTY, 0.0 };
+ 
+ Node	*curnode = nil;	/* the node being executed, for debugging */
+ 
+@@ -224,7 +224,7 @@
+ 
+ Cell *call(Node **a, int)	/* function call.  very kludgy and fragile */
+ {
+-	static Cell newcopycell = { OCELL, CCOPY, NUM|STR|DONTFREE, 0, EMPTY, 0.0 };
++	static Cell newcopycell = { OCELL, CCOPY, NUM|STR|DONTFREE, 0, 0, EMPTY, 0.0 };
+ 	int i, ncall, ndef;
+ 	Node *x;
+ 	Cell *args[NARGS], *oargs[NARGS];	/* BUG: fixed size arrays */
+@@ -1656,6 +1656,7 @@
+ Cell *printstat(Node **a, int)	/* print a[0] */
+ {
+ 	int r;
++	char *s;
+ 	Node *x;
+ 	Cell *y;
+ 	Biobuf *fp;
+@@ -1666,7 +1667,8 @@
+ 		fp = redirect(ptoi(a[1]), a[2]);
+ 	for (x = a[0]; x != nil; x = x->nnext) {
+ 		y = execute(x);
+-		Bwrite(fp, getsval(y), strlen(getsval(y)));
++		s = getpssval(y);
++		Bwrite(fp, s, strlen(s));
+ 		if (istemp(y))
+ 			tfree(y);
+ 		if (x->nnext == nil)
+--- a/sys/src/cmd/awk/tran.c
++++ b/sys/src/cmd/awk/tran.c
+@@ -236,6 +236,7 @@
+ 	}
+ 	p->csub = CUNK;
+ 	p->ctype = OCELL;
++	p->conv = 0;
+ 	tp->nelemt++;
+ 	if (tp->nelemt > FULLTAB * tp->size)
+ 		rehash(tp);
+@@ -372,8 +373,9 @@
+ 	return(vp->fval);
+ }
+ 
+-char *getsval(Cell *vp)	/* get string val of a Cell */
++static char *get_str_val(Cell *vp, char **fmt)	/* get string val of a Cell */
+ {
++	int conv;
+ 	char s[100];	/* BUG: unchecked */
+ 	double dtemp;
+ 
+@@ -383,19 +385,37 @@
+ 		fldbld();
+ 	else if (isrec(vp) && donerec == 0)
+ 		recbld();
+-	if (isstr(vp) == 0) {
++	conv = (uintptr)*fmt >> 32 ^ (uintptr)*fmt & 0xffffffff;
++	if (isstr(vp) == 0
++	|| vp->conv != 0 && (vp->tval & DONTFREE) == 0 && isnum(vp) && !isfld(vp)
++	&& (fmt == OFMT ^ (vp->tval & FMT) != 0 || vp->conv != conv)) {
+ 		if (freeable(vp))
+ 			xfree(vp->sval);
+ 		if (modf(vp->fval, &dtemp) == 0)	/* it's integral */
+ 			sprint(s, "%.30g", vp->fval);
+ 		else
+-			sprint(s, *CONVFMT, vp->fval);
++			sprint(s, *fmt, vp->fval);
+ 		vp->sval = tostring(s);
+ 		vp->tval &= ~DONTFREE;
+ 		vp->tval |= STR;
++		if (fmt == OFMT)
++			vp->tval |= FMT;
++		else
++			vp->tval &= ~FMT;
++		vp->conv = conv;
+ 	}
+ 	   dprint( ("getsval %p: %s = \"%s (%p)\", t=%o\n", vp, vp->nval, vp->sval, vp->sval, vp->tval) );
+ 	return(vp->sval);
++}
++
++char *getsval(Cell *vp)		/* get string val of a Cell */
++{
++	return get_str_val(vp, CONVFMT);
++}
++
++char *getpssval(Cell *vp)	/* get string val of a Cell for print */
++{
++	return get_str_val(vp, OFMT);
+ }
+ 
+ char *tostring(char *s)	/* make a copy of string s */

@@ -1,0 +1,70 @@
+diff 2a6e03968b9227e91b2df181fe8461d719395359 uncommitted
+--- a//sys/src/cmd/aux/vga/igfx.c
++++ b//sys/src/cmd/aux/vga/igfx.c
+@@ -176,6 +176,7 @@
+ 
+ 	/* G45 */
+ 	Reg	gmbus[6];	/* GMBUSx */
++	int ispnv;
+ 
+ 	Reg	sdvoc;
+ 	Reg	sdvob;
+@@ -389,7 +390,10 @@
+ 	case 0x0102:	/* Dell Optiplex 790 */
+ 	case 0x0126:	/* Thinkpad X220 */
+ 		return TypeSNB;
++	case 0xa001:    /* PineView Graphics */
+ 	case 0xa011:    /* PineView Graphics */
++		igfx->ispnv = 1;
++		/* wet floor */
+ 	case 0x27ae:	/* Intel 945GME */
+ 	case 0x27a2:	/* GM945/82940GML - ThinkPad X60 Tablet */
+ 	case 0x29a2:	/* 82P965/G965 HECI desktop */
+@@ -733,17 +737,21 @@
+ 
+ 	best = -1;
+ 	for(N=3; N<=8; N++)
+-	for(M2=5; M2<=9; M2++)
++	//for(M2=5; M2<=9; M2++)
++	for(M2=0; M2<=254; M2++)
+ //	for(M1=10; M1<=20; M1++){
+-	for(M1=12; M1<=22; M1++){
++	//for(M1=12; M1<=22; M1++){
++	for(M1=0; M1<=0; M1++){
+ 		M = 5*(M1+2) + (M2+2);
+-		if(M < 79 || M > 127)
++		//if(M < 79 || M > 127)
+ //		if(M < 70 || M > 120)
++		if(M < 2 || M > 256)
+ 			continue;
+ 		for(P1=1; P1<=8; P1++){
+ 			P = P1 * P2;
+-			if(P < 5 || P > 98)
++			//if(P < 5 || P > 98)
+ //			if(P < 4 || P > 98)
++			if(P < 7 || P > 112)
+ 				continue;
+ 			a = cref;
+ 			a *= M;
+@@ -871,8 +879,10 @@
+ 		 * preconfigured by the BIOS.
+ 		 */
+ 		if(freq > 112*MHz || (igfx->lvds.v>>4 & 3) == 3){
+-			p2 >>= 1;
+-			dpll->ctrl.v |= (1<<24);
++			if(!igfx->ispnv){	// FIXME: check DPLLB_LVDS_P2_CLOCK_DIV_7
++				p2 >>= 1;
++				dpll->ctrl.v |= (1<<24);
++			}
+ 		}
+ 		if(genpll(freq, cref, p2, &m1, &m2, &n, &p1) < 0)
+ 			return -1;
+@@ -917,7 +927,7 @@
+ 	/* FP1 P1 Post divisor */
+ 	if(igfx->pci->did != 0x27a2 && igfx->pci->did != 0x2592){
+ 		dpll->ctrl.v &= ~0xFF;
+-		dpll->ctrl.v |=  0x01<<(p1-1);
++		dpll->ctrl.v |=  0x01<<(p1-1);	// FIXME: post_div different for pnv?
+ 		dpll->fp1.v = dpll->fp0.v;
+ 	}
+ 

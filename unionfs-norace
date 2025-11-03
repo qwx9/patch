@@ -1,0 +1,159 @@
+diff c29f9884bb2aba8ac6a2b9286d582ba86dd61ae1 uncommitted
+--- a/unionfs.c
++++ b/unionfs.c
+@@ -198,7 +198,7 @@
+ 
+ 	f->pid = getpid();
+ 	atnotify(catchflush, 1);
+-	srvrelease(&thefs);
++//	srvrelease(&thefs);
+ 	if(f->mode & DMDIR){
+ 		f->mtpt = mtptgrab();
+ 		path = s_new();
+@@ -222,13 +222,13 @@
+ 	R->iounit = iounit(f->fd);
+ 	if(f->flushed == 0)
+ 		respond(r, nil);
+-	srvacquire(&thefs);
++//	srvacquire(&thefs);
+ 	atnotify(catchflush, 0);
+ 	return;
+ error:
+ 	if(f->flushed == 0)
+ 		responderror(r);
+-	srvacquire(&thefs);
++//	srvacquire(&thefs);
+ 	atnotify(catchflush, 0);
+ }
+ 
+@@ -238,7 +238,7 @@
+ 	FILE *f;
+ 	
+ 	f = r->fid->aux;
+-	srvrelease(&thefs);
++//	srvrelease(&thefs);
+ 	if(remove(s_to_c(f->realpath)) == -1){
+ 		responderror(r);
+ 		goto done;
+@@ -245,7 +245,8 @@
+ 	}
+ 	respond(r, nil);
+ done:
+-	srvacquire(&thefs);
++//	srvacquire(&thefs);
++	;
+ }
+ 
+ int
+@@ -275,15 +276,19 @@
+ 
+ 	f->pid = getpid();
+ 	atnotify(catchflush, 1);
+-	srvrelease(&thefs);
++//	srvrelease(&thefs);
+ 	if(f->mode&DMDIR){
+ 		if(T->offset == 0){
+-			if(seek(f->fd, 0, 0) == -1)
++			if(seek(f->fd, 0, 0) == -1){
++				fprint(2, "fsread: seek %r\n");
+ 				goto error;
++			}
+ 			if(f->dl != nil)
+ 				dirlistfree(f->dl);
+-			if((f->dl = dirlist(f->fd)) == nil)
++			if((f->dl = dirlist(f->fd)) == nil){
++				fprint(2, "fsread: dirlist %r\n");
+ 				goto error;
++			}
+ 		}
+ 		dirread9p(r, dirgen, f->dl);
+ 	}else{
+@@ -293,13 +298,13 @@
+ 	}
+ 	if(f->flushed == 0)
+ 		respond(r, nil);
+-	srvacquire(&thefs);
++//	srvacquire(&thefs);
+ 	atnotify(catchflush, 0);
+ 	return;
+ error:
+ 	if(f->flushed == 0)
+ 		responderror(r);
+-	srvacquire(&thefs);
++//	srvacquire(&thefs);
+ 	atnotify(catchflush, 0);
+ }
+ 
+@@ -313,7 +318,7 @@
+ 	R = &r->ofcall;
+ 	f = r->fid->aux;
+ 	
+-	srvrelease(&thefs);
++//	srvrelease(&thefs);
+ 	atnotify(catchflush, 1);
+ 	if((R->count = pwrite(f->fd, T->data, T->count, T->offset)) != T->count){
+ 		if(f->flushed == 0)
+@@ -323,7 +328,7 @@
+ 	if(f->flushed == 0)
+ 		respond(r, nil);
+ done:
+-	srvacquire(&thefs);
++//	srvacquire(&thefs);
+ 	atnotify(catchflush, 0);
+ }
+ 
+@@ -396,7 +401,7 @@
+ 	R = &r->ofcall;
+ 	parent = r->fid->aux;
+ 	
+-	srvrelease(&thefs);
++//	srvrelease(&thefs);
+ 	for(i = 0; i < nbranch; i++)
+ 		if(branch[i].create == 1)
+ 			break;
+@@ -409,7 +414,7 @@
+ 		if(fd != -1)
+ 			close(fd);
+ 		responderror(r);
+-		srvacquire(&thefs);
++	//	srvacquire(&thefs);
+ 		return;
+ 	}
+ 	walk(realpath, T->name, nil);
+@@ -429,7 +434,7 @@
+ 	r->fid->aux = f;
+ 	R->qid = f->qid;
+ 	respond(r, nil);
+-	srvacquire(&thefs);
++//	srvacquire(&thefs);
+ }
+ 
+ void
+@@ -436,7 +441,7 @@
+ fsstat(Req *r)
+ {
+ 	FILE *f = r->fid->aux;
+-	
++
+ 	dircopy(&r->d, f);
+ 	respond(r, nil);
+ }
+@@ -446,7 +451,7 @@
+ {
+ 	FILE *f = r->fid->aux;
+ 	
+-	srvrelease(&thefs);
++//	srvrelease(&thefs);
+ 	if(dirwstat(s_to_c(f->realpath), &r->d) == -1){
+ 		responderror(r);
+ 		goto done;
+@@ -453,7 +458,8 @@
+ 	}
+ 	respond(r, nil);
+ done:
+-	srvacquire(&thefs);
++//	srvacquire(&thefs);
++	;
+ }
+ 
+ char*

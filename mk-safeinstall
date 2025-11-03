@@ -1,0 +1,284 @@
+diff 2476c1c21e0b9e292b82ac084731ccca219af103 uncommitted
+--- a/sys/src/cmd/audio/flacdec/mkfile
++++ b/sys/src/cmd/audio/flacdec/mkfile
+@@ -1,24 +1,10 @@
+ </$objtype/mkfile
+ <../config
+ 
+-TARGET=flacdec
++TARG=flacdec
++OFILES=flacdec.$O ../libFLAC/libFLAC.a$O
+ 
+-CC=pcc
+-CFLAGS=-I. -I../libFLAC -I../libFLAC/FLAC -D_POSIX_SOURCE -D_BSD_EXTENSION -DPlan9
++</sys/src/cmd/mkone
+ 
+-%.$O: %.c
+-	$CC $CFLAGS -c $stem.c
+-
+-$O.%: %.$O ../libFLAC/libFLAC.a$O
+-	$CC -o $target $prereq
+-
+-all:V: $O.$TARGET
+-
+-clean:V:
+-	rm -f *.[$OS] [$OS].$TARGET
+-
+-install:V: $O.$TARGET
+-	cp $O.$TARGET $BIN/$TARGET
+-
+-test:VQ:
+-	# nothing
++CC=pcc
++CFLAGS=$CFLAGS -c -I. -I../libFLAC -I../libFLAC/FLAC -D_POSIX_SOURCE -D_BSD_EXTENSION -DPlan9
+--- a/sys/src/cmd/audio/flacenc/mkfile
++++ b/sys/src/cmd/audio/flacenc/mkfile
+@@ -1,24 +1,10 @@
+ </$objtype/mkfile
+ <../config
+ 
+-TARGET=flacenc
++TARG=flacenc
++OFILES=flacenc.$O ../libFLAC/libFLAC.a$O
+ 
+-CC=pcc
+-CFLAGS=-I. -I../libFLAC -I../libFLAC/FLAC -D_POSIX_SOURCE -D_BSD_EXTENSION -DPlan9 -c
++</sys/src/cmd/mkone
+ 
+-%.$O: %.c
+-	$CC $CFLAGS -c $stem.c
+-
+-$O.%: %.$O ../libFLAC/libFLAC.a$O
+-	$CC -o $target $prereq
+-
+-all:V: $O.$TARGET
+-
+-clean:V:
+-	rm -f *.[$OS] [$OS].$TARGET
+-
+-install:V: $O.$TARGET
+-	cp $O.$TARGET $BIN/$TARGET
+-
+-test:VQ:
+-	# nothing
++CC=pcc
++CFLAGS=$CFLAGS -c -I. -I../libFLAC -I../libFLAC/FLAC -D_POSIX_SOURCE -D_BSD_EXTENSION -DPlan9 -c
+--- a/sys/src/cmd/audio/mkfile
++++ b/sys/src/cmd/audio/mkfile
+@@ -34,6 +34,13 @@
+ 		mk install
+ 	}
+ 
++safeinstall:V:
++	mkdir -p $BIN
++	for (i in $DIRS) @{
++		cd $i
++		mk safeinstall
++	}
++
+ installall:V:
+ 	for (i in $DIRS) @{
+ 		cd $i
+--- a/sys/src/cmd/audio/oggdec/mkfile
++++ b/sys/src/cmd/audio/oggdec/mkfile
+@@ -1,24 +1,10 @@
+ </$objtype/mkfile
+ <../config
+ 
+-TARGET=oggdec
++OFILES=oggdec.$O
++TARG=oggdec
+ 
+-CC=pcc
+-CFLAGS=-I../libvorbis -I../libogg -D_POSIX_SOURCE
++</sys/src/cmd/mkone
+ 
+-%.$O: %.c
+-	$CC $CFLAGS -c $stem.c
+-
+-$O.%: %.$O
+-	$CC -o $target $prereq
+-
+-all:V: $O.$TARGET
+-
+-clean:V:
+-	rm -f *.[$OS] [$OS].$TARGET
+-
+-install:V: $O.$TARGET
+-	cp $O.$TARGET $BIN/$TARGET
+-
+-test:VQ:
+-	# nothing
++CC=pcc
++CFLAGS=$CFLAGS -c -I../libvorbis -I../libogg -D_POSIX_SOURCE
+--- a/sys/src/cmd/audio/oggenc/mkfile
++++ b/sys/src/cmd/audio/oggenc/mkfile
+@@ -1,24 +1,10 @@
+ </$objtype/mkfile
+ <../config
+ 
+-TARGET=oggenc
++TARG=oggenc
++OFILES=oggenc.$O
+ 
+-CC=pcc
+-CFLAGS=-I../libvorbis -I../libogg
++</sys/src/cmd/mkone
+ 
+-%.$O: %.c
+-	$CC $CFLAGS -c $stem.c
+-
+-$O.%: %.$O
+-	$CC -o $target $prereq
+-
+-all:V: $O.$TARGET
+-
+-clean:V:
+-	rm -f *.[$OS] [$OS].$TARGET
+-
+-install:V: $O.$TARGET
+-	cp $O.$TARGET $BIN/$TARGET
+-
+-test:VQ:
+-	# nothing
++CC=pcc
++CFLAGS=$CFLAGS -c -I../libvorbis -I../libogg
+--- a/sys/src/cmd/mkfile
++++ b/sys/src/cmd/mkfile
+@@ -66,6 +66,13 @@
+ 	mk $MKFLAGS $TARG.install
+ 	mk $MKFLAGS install.dirs
+ 
++%.safeinstall:V: $BIN/%
++
++safeinstall:V: cp.safeinstall
++	mk $MKFLAGS yacc.safeinstall
++	mk $MKFLAGS $TARG.safeinstall
++	mk $MKFLAGS safeinstall.dirs
++
+ installall:V: install.cpus
+ 
+ cleancmds:V:
+--- a/sys/src/cmd/postscript/cropmarks/mkfile
++++ b/sys/src/cmd/postscript/cropmarks/mkfile
+@@ -6,9 +6,9 @@
+ 
+ default:V:	cropmarks
+ 
+-install:V:	$POSTBIN/cropmarks $POSTLIB/cropmarks.ps
++install safeinstall:V:	$POSTBIN/cropmarks $POSTLIB/cropmarks.ps
+ 
+-installall:V:	install
++installall safeinstallall:V:	install
+ 
+ $POSTLIB/cropmarks.ps:	cropmarks.ps
+ 	cp $prereq $target
+--- a/sys/src/cmd/postscript/grabit/mkfile
++++ b/sys/src/cmd/postscript/grabit/mkfile
+@@ -4,7 +4,9 @@
+ 
+ all:V:	grabit
+ 
+-install installall:V:	$POSTBIN/grabit $POSTLIB/grabit.ps
++install safeinstall:V:	$POSTBIN/grabit $POSTLIB/grabit.ps
++
++installall safeinstallall:V:	install
+ 
+ $POSTBIN/grabit:	grabit
+ 	cp $prereq $target
+--- a/sys/src/cmd/postscript/hardcopy/mkfile
++++ b/sys/src/cmd/postscript/hardcopy/mkfile
+@@ -4,7 +4,9 @@
+ 
+ all:V:	hardcopy
+ 
+-installall install:V:	$POSTBIN/hardcopy $POSTLIB/hardcopy.ps
++install safeinstall:V:	$POSTBIN/hardcopy $POSTLIB/hardcopy.ps
++
++installall safeinstallall:V:	install
+ 
+ $POSTBIN/hardcopy:	hardcopy
+ 	cp $prereq $target
+--- a/sys/src/cmd/postscript/mpictures/mkfile
++++ b/sys/src/cmd/postscript/mpictures/mkfile
+@@ -6,7 +6,9 @@
+ 
+ all:V:	tmac.pictures
+ 
+-install installall:V:	$TMACDIR/tmac.pictures
++install safeinstall:V:	$TMACDIR/tmac.pictures
++
++installall safeinstallall:V: install
+ 
+ clean nuke:V:
+ 	rm -f tmac.pictures
+--- a/sys/src/cmd/postscript/printfont/mkfile
++++ b/sys/src/cmd/postscript/printfont/mkfile
+@@ -6,7 +6,9 @@
+ 
+ all:V:	printfont
+ 
+-install installall:V:	$POSTBIN/printfont $POSTLIB/printfont.ps
++install safeinstall:V:	$POSTBIN/printfont $POSTLIB/printfont.ps
++
++installall safeinstallall:V: install
+ 
+ clean nuke:V:
+ 	rm -f printfont
+--- a/sys/src/cmd/postscript/psencoding/mkfile
++++ b/sys/src/cmd/postscript/psencoding/mkfile
+@@ -6,7 +6,9 @@
+ 
+ all:V:	psencoding
+ 
+-install installall:V:	$POSTBIN/psencoding $POSTLIB/Latin1.enc $POSTLIB/UTF.enc
++install safeinstall:V:	$POSTBIN/psencoding $POSTLIB/Latin1.enc $POSTLIB/UTF.enc
++
++installall safeinstallall:V: install
+ 
+ clean nuke:V:
+ 	rm -f psencoding
+--- a/sys/src/cmd/postscript/psfiles/mkfile
++++ b/sys/src/cmd/postscript/psfiles/mkfile
+@@ -5,7 +5,7 @@
+ all:VQ:
+ 	;
+ 
+-install installall:V:
++install installall safeinstall safeinstallall:V:
+ 	cp *.ps ps.* $POSTLIB
+ 
+ clean nuke:VQ:
+--- a/sys/src/cmd/upas/mkfile
++++ b/sys/src/cmd/upas/mkfile
+@@ -28,7 +28,7 @@
+ default:V:
+ 	mk all
+ 
+-all install installall clean nuke:V:
++all install safeinstall installall clean nuke:V:
+ 	for (i in $DIRS) @{
+ 		cd $i
+ 		mk $target
+--- a/sys/src/mkfile
++++ b/sys/src/mkfile
+@@ -59,6 +59,18 @@
+ 	}
+ 	date
+ 
++safeinstall:VQ:
++	date
++	for (i in $LIBS $SUBSYS) @{
++		cd $i
++		mk install
++	}
++	for (i in $CMDS) @{
++		cd $i
++		mk safeinstall
++	}
++	date
++
+ installall:V:
+ 	echo "installall not supported"
+ 
+

@@ -1,0 +1,462 @@
+diff 19b38409fc2f2fb9513cd50492b2a3c47a74a3d8 uncommitted
+--- a//sys/lib/ghostscript/font/Fontmap
++++ b//sys/lib/ghostscript/font/Fontmap
+@@ -147,6 +147,229 @@
+ WNCYR10 (/sys/lib/postscript/font/ams/wncyr10.pfa) ;
+ WNCYSC10 (/sys/lib/postscript/font/ams/wncysc10.pfa) ;
+ WNCYSS10 (/sys/lib/postscript/font/ams/wncyss10.pfa) ;
++Unifont00 (/sys/lib/postscript/font/unifont/00.pfb) ;
++Unifont01 (/sys/lib/postscript/font/unifont/01.pfb) ;
++Unifont02 (/sys/lib/postscript/font/unifont/02.pfb) ;
++Unifont03 (/sys/lib/postscript/font/unifont/03.pfb) ;
++Unifont04 (/sys/lib/postscript/font/unifont/04.pfb) ;
++Unifont05 (/sys/lib/postscript/font/unifont/05.pfb) ;
++Unifont06 (/sys/lib/postscript/font/unifont/06.pfb) ;
++Unifont07 (/sys/lib/postscript/font/unifont/07.pfb) ;
++Unifont08 (/sys/lib/postscript/font/unifont/08.pfb) ;
++Unifont09 (/sys/lib/postscript/font/unifont/09.pfb) ;
++Unifont0a (/sys/lib/postscript/font/unifont/0a.pfb) ;
++Unifont0b (/sys/lib/postscript/font/unifont/0b.pfb) ;
++Unifont0c (/sys/lib/postscript/font/unifont/0c.pfb) ;
++Unifont0d (/sys/lib/postscript/font/unifont/0d.pfb) ;
++Unifont0e (/sys/lib/postscript/font/unifont/0e.pfb) ;
++Unifont0f (/sys/lib/postscript/font/unifont/0f.pfb) ;
++Unifont10 (/sys/lib/postscript/font/unifont/10.pfb) ;
++Unifont11 (/sys/lib/postscript/font/unifont/11.pfb) ;
++Unifont12 (/sys/lib/postscript/font/unifont/12.pfb) ;
++Unifont13 (/sys/lib/postscript/font/unifont/13.pfb) ;
++Unifont14 (/sys/lib/postscript/font/unifont/14.pfb) ;
++Unifont15 (/sys/lib/postscript/font/unifont/15.pfb) ;
++Unifont16 (/sys/lib/postscript/font/unifont/16.pfb) ;
++Unifont17 (/sys/lib/postscript/font/unifont/17.pfb) ;
++Unifont18 (/sys/lib/postscript/font/unifont/18.pfb) ;
++Unifont19 (/sys/lib/postscript/font/unifont/19.pfb) ;
++Unifont1a (/sys/lib/postscript/font/unifont/1a.pfb) ;
++Unifont1b (/sys/lib/postscript/font/unifont/1b.pfb) ;
++Unifont1c (/sys/lib/postscript/font/unifont/1c.pfb) ;
++Unifont1d (/sys/lib/postscript/font/unifont/1d.pfb) ;
++Unifont1e (/sys/lib/postscript/font/unifont/1e.pfb) ;
++Unifont1f (/sys/lib/postscript/font/unifont/1f.pfb) ;
++Unifont20 (/sys/lib/postscript/font/unifont/20.pfb) ;
++Unifont21 (/sys/lib/postscript/font/unifont/21.pfb) ;
++Unifont22 (/sys/lib/postscript/font/unifont/22.pfb) ;
++Unifont23 (/sys/lib/postscript/font/unifont/23.pfb) ;
++Unifont24 (/sys/lib/postscript/font/unifont/24.pfb) ;
++Unifont25 (/sys/lib/postscript/font/unifont/25.pfb) ;
++Unifont26 (/sys/lib/postscript/font/unifont/26.pfb) ;
++Unifont27 (/sys/lib/postscript/font/unifont/27.pfb) ;
++Unifont28 (/sys/lib/postscript/font/unifont/28.pfb) ;
++Unifont29 (/sys/lib/postscript/font/unifont/29.pfb) ;
++Unifont2a (/sys/lib/postscript/font/unifont/2a.pfb) ;
++Unifont2b (/sys/lib/postscript/font/unifont/2b.pfb) ;
++Unifont2c (/sys/lib/postscript/font/unifont/2c.pfb) ;
++Unifont2d (/sys/lib/postscript/font/unifont/2d.pfb) ;
++Unifont2e (/sys/lib/postscript/font/unifont/2e.pfb) ;
++Unifont2f (/sys/lib/postscript/font/unifont/2f.pfb) ;
++Unifont30 (/sys/lib/postscript/font/unifont/30.pfb) ;
++Unifont31 (/sys/lib/postscript/font/unifont/31.pfb) ;
++Unifont32 (/sys/lib/postscript/font/unifont/32.pfb) ;
++Unifont33 (/sys/lib/postscript/font/unifont/33.pfb) ;
++Unifont34 (/sys/lib/postscript/font/unifont/34.pfb) ;
++Unifont35 (/sys/lib/postscript/font/unifont/35.pfb) ;
++Unifont36 (/sys/lib/postscript/font/unifont/36.pfb) ;
++Unifont37 (/sys/lib/postscript/font/unifont/37.pfb) ;
++Unifont38 (/sys/lib/postscript/font/unifont/38.pfb) ;
++Unifont39 (/sys/lib/postscript/font/unifont/39.pfb) ;
++Unifont3a (/sys/lib/postscript/font/unifont/3a.pfb) ;
++Unifont3b (/sys/lib/postscript/font/unifont/3b.pfb) ;
++Unifont3c (/sys/lib/postscript/font/unifont/3c.pfb) ;
++Unifont3d (/sys/lib/postscript/font/unifont/3d.pfb) ;
++Unifont3e (/sys/lib/postscript/font/unifont/3e.pfb) ;
++Unifont3f (/sys/lib/postscript/font/unifont/3f.pfb) ;
++Unifont40 (/sys/lib/postscript/font/unifont/40.pfb) ;
++Unifont41 (/sys/lib/postscript/font/unifont/41.pfb) ;
++Unifont42 (/sys/lib/postscript/font/unifont/42.pfb) ;
++Unifont43 (/sys/lib/postscript/font/unifont/43.pfb) ;
++Unifont44 (/sys/lib/postscript/font/unifont/44.pfb) ;
++Unifont45 (/sys/lib/postscript/font/unifont/45.pfb) ;
++Unifont46 (/sys/lib/postscript/font/unifont/46.pfb) ;
++Unifont47 (/sys/lib/postscript/font/unifont/47.pfb) ;
++Unifont48 (/sys/lib/postscript/font/unifont/48.pfb) ;
++Unifont49 (/sys/lib/postscript/font/unifont/49.pfb) ;
++Unifont4a (/sys/lib/postscript/font/unifont/4a.pfb) ;
++Unifont4b (/sys/lib/postscript/font/unifont/4b.pfb) ;
++Unifont4c (/sys/lib/postscript/font/unifont/4c.pfb) ;
++Unifont4d (/sys/lib/postscript/font/unifont/4d.pfb) ;
++Unifont4e (/sys/lib/postscript/font/unifont/4e.pfb) ;
++Unifont4f (/sys/lib/postscript/font/unifont/4f.pfb) ;
++Unifont50 (/sys/lib/postscript/font/unifont/50.pfb) ;
++Unifont51 (/sys/lib/postscript/font/unifont/51.pfb) ;
++Unifont52 (/sys/lib/postscript/font/unifont/52.pfb) ;
++Unifont53 (/sys/lib/postscript/font/unifont/53.pfb) ;
++Unifont54 (/sys/lib/postscript/font/unifont/54.pfb) ;
++Unifont55 (/sys/lib/postscript/font/unifont/55.pfb) ;
++Unifont56 (/sys/lib/postscript/font/unifont/56.pfb) ;
++Unifont57 (/sys/lib/postscript/font/unifont/57.pfb) ;
++Unifont58 (/sys/lib/postscript/font/unifont/58.pfb) ;
++Unifont59 (/sys/lib/postscript/font/unifont/59.pfb) ;
++Unifont5a (/sys/lib/postscript/font/unifont/5a.pfb) ;
++Unifont5b (/sys/lib/postscript/font/unifont/5b.pfb) ;
++Unifont5c (/sys/lib/postscript/font/unifont/5c.pfb) ;
++Unifont5d (/sys/lib/postscript/font/unifont/5d.pfb) ;
++Unifont5e (/sys/lib/postscript/font/unifont/5e.pfb) ;
++Unifont5f (/sys/lib/postscript/font/unifont/5f.pfb) ;
++Unifont60 (/sys/lib/postscript/font/unifont/60.pfb) ;
++Unifont61 (/sys/lib/postscript/font/unifont/61.pfb) ;
++Unifont62 (/sys/lib/postscript/font/unifont/62.pfb) ;
++Unifont63 (/sys/lib/postscript/font/unifont/63.pfb) ;
++Unifont64 (/sys/lib/postscript/font/unifont/64.pfb) ;
++Unifont65 (/sys/lib/postscript/font/unifont/65.pfb) ;
++Unifont66 (/sys/lib/postscript/font/unifont/66.pfb) ;
++Unifont67 (/sys/lib/postscript/font/unifont/67.pfb) ;
++Unifont68 (/sys/lib/postscript/font/unifont/68.pfb) ;
++Unifont69 (/sys/lib/postscript/font/unifont/69.pfb) ;
++Unifont6a (/sys/lib/postscript/font/unifont/6a.pfb) ;
++Unifont6b (/sys/lib/postscript/font/unifont/6b.pfb) ;
++Unifont6c (/sys/lib/postscript/font/unifont/6c.pfb) ;
++Unifont6d (/sys/lib/postscript/font/unifont/6d.pfb) ;
++Unifont6e (/sys/lib/postscript/font/unifont/6e.pfb) ;
++Unifont6f (/sys/lib/postscript/font/unifont/6f.pfb) ;
++Unifont70 (/sys/lib/postscript/font/unifont/70.pfb) ;
++Unifont71 (/sys/lib/postscript/font/unifont/71.pfb) ;
++Unifont72 (/sys/lib/postscript/font/unifont/72.pfb) ;
++Unifont73 (/sys/lib/postscript/font/unifont/73.pfb) ;
++Unifont74 (/sys/lib/postscript/font/unifont/74.pfb) ;
++Unifont75 (/sys/lib/postscript/font/unifont/75.pfb) ;
++Unifont76 (/sys/lib/postscript/font/unifont/76.pfb) ;
++Unifont77 (/sys/lib/postscript/font/unifont/77.pfb) ;
++Unifont78 (/sys/lib/postscript/font/unifont/78.pfb) ;
++Unifont79 (/sys/lib/postscript/font/unifont/79.pfb) ;
++Unifont7a (/sys/lib/postscript/font/unifont/7a.pfb) ;
++Unifont7b (/sys/lib/postscript/font/unifont/7b.pfb) ;
++Unifont7c (/sys/lib/postscript/font/unifont/7c.pfb) ;
++Unifont7d (/sys/lib/postscript/font/unifont/7d.pfb) ;
++Unifont7e (/sys/lib/postscript/font/unifont/7e.pfb) ;
++Unifont7f (/sys/lib/postscript/font/unifont/7f.pfb) ;
++Unifont80 (/sys/lib/postscript/font/unifont/80.pfb) ;
++Unifont81 (/sys/lib/postscript/font/unifont/81.pfb) ;
++Unifont82 (/sys/lib/postscript/font/unifont/82.pfb) ;
++Unifont83 (/sys/lib/postscript/font/unifont/83.pfb) ;
++Unifont84 (/sys/lib/postscript/font/unifont/84.pfb) ;
++Unifont85 (/sys/lib/postscript/font/unifont/85.pfb) ;
++Unifont86 (/sys/lib/postscript/font/unifont/86.pfb) ;
++Unifont87 (/sys/lib/postscript/font/unifont/87.pfb) ;
++Unifont88 (/sys/lib/postscript/font/unifont/88.pfb) ;
++Unifont89 (/sys/lib/postscript/font/unifont/89.pfb) ;
++Unifont8a (/sys/lib/postscript/font/unifont/8a.pfb) ;
++Unifont8b (/sys/lib/postscript/font/unifont/8b.pfb) ;
++Unifont8c (/sys/lib/postscript/font/unifont/8c.pfb) ;
++Unifont8d (/sys/lib/postscript/font/unifont/8d.pfb) ;
++Unifont8e (/sys/lib/postscript/font/unifont/8e.pfb) ;
++Unifont8f (/sys/lib/postscript/font/unifont/8f.pfb) ;
++Unifont90 (/sys/lib/postscript/font/unifont/90.pfb) ;
++Unifont91 (/sys/lib/postscript/font/unifont/91.pfb) ;
++Unifont92 (/sys/lib/postscript/font/unifont/92.pfb) ;
++Unifont93 (/sys/lib/postscript/font/unifont/93.pfb) ;
++Unifont94 (/sys/lib/postscript/font/unifont/94.pfb) ;
++Unifont95 (/sys/lib/postscript/font/unifont/95.pfb) ;
++Unifont96 (/sys/lib/postscript/font/unifont/96.pfb) ;
++Unifont97 (/sys/lib/postscript/font/unifont/97.pfb) ;
++Unifont98 (/sys/lib/postscript/font/unifont/98.pfb) ;
++Unifont99 (/sys/lib/postscript/font/unifont/99.pfb) ;
++Unifont9a (/sys/lib/postscript/font/unifont/9a.pfb) ;
++Unifont9b (/sys/lib/postscript/font/unifont/9b.pfb) ;
++Unifont9c (/sys/lib/postscript/font/unifont/9c.pfb) ;
++Unifont9d (/sys/lib/postscript/font/unifont/9d.pfb) ;
++Unifont9e (/sys/lib/postscript/font/unifont/9e.pfb) ;
++Unifont9f (/sys/lib/postscript/font/unifont/9f.pfb) ;
++Unifonta0 (/sys/lib/postscript/font/unifont/a0.pfb) ;
++Unifonta1 (/sys/lib/postscript/font/unifont/a1.pfb) ;
++Unifonta2 (/sys/lib/postscript/font/unifont/a2.pfb) ;
++Unifonta3 (/sys/lib/postscript/font/unifont/a3.pfb) ;
++Unifonta4 (/sys/lib/postscript/font/unifont/a4.pfb) ;
++Unifonta5 (/sys/lib/postscript/font/unifont/a5.pfb) ;
++Unifonta6 (/sys/lib/postscript/font/unifont/a6.pfb) ;
++Unifonta7 (/sys/lib/postscript/font/unifont/a7.pfb) ;
++Unifonta8 (/sys/lib/postscript/font/unifont/a8.pfb) ;
++Unifonta9 (/sys/lib/postscript/font/unifont/a9.pfb) ;
++Unifontaa (/sys/lib/postscript/font/unifont/aa.pfb) ;
++Unifontab (/sys/lib/postscript/font/unifont/ab.pfb) ;
++Unifontac (/sys/lib/postscript/font/unifont/ac.pfb) ;
++Unifontad (/sys/lib/postscript/font/unifont/ad.pfb) ;
++Unifontae (/sys/lib/postscript/font/unifont/ae.pfb) ;
++Unifontaf (/sys/lib/postscript/font/unifont/af.pfb) ;
++Unifontb0 (/sys/lib/postscript/font/unifont/b0.pfb) ;
++Unifontb1 (/sys/lib/postscript/font/unifont/b1.pfb) ;
++Unifontb2 (/sys/lib/postscript/font/unifont/b2.pfb) ;
++Unifontb3 (/sys/lib/postscript/font/unifont/b3.pfb) ;
++Unifontb4 (/sys/lib/postscript/font/unifont/b4.pfb) ;
++Unifontb5 (/sys/lib/postscript/font/unifont/b5.pfb) ;
++Unifontb6 (/sys/lib/postscript/font/unifont/b6.pfb) ;
++Unifontb7 (/sys/lib/postscript/font/unifont/b7.pfb) ;
++Unifontb8 (/sys/lib/postscript/font/unifont/b8.pfb) ;
++Unifontb9 (/sys/lib/postscript/font/unifont/b9.pfb) ;
++Unifontba (/sys/lib/postscript/font/unifont/ba.pfb) ;
++Unifontbb (/sys/lib/postscript/font/unifont/bb.pfb) ;
++Unifontbc (/sys/lib/postscript/font/unifont/bc.pfb) ;
++Unifontbd (/sys/lib/postscript/font/unifont/bd.pfb) ;
++Unifontbe (/sys/lib/postscript/font/unifont/be.pfb) ;
++Unifontbf (/sys/lib/postscript/font/unifont/bf.pfb) ;
++Unifontc0 (/sys/lib/postscript/font/unifont/c0.pfb) ;
++Unifontc1 (/sys/lib/postscript/font/unifont/c1.pfb) ;
++Unifontc2 (/sys/lib/postscript/font/unifont/c2.pfb) ;
++Unifontc3 (/sys/lib/postscript/font/unifont/c3.pfb) ;
++Unifontc4 (/sys/lib/postscript/font/unifont/c4.pfb) ;
++Unifontc5 (/sys/lib/postscript/font/unifont/c5.pfb) ;
++Unifontc6 (/sys/lib/postscript/font/unifont/c6.pfb) ;
++Unifontc7 (/sys/lib/postscript/font/unifont/c7.pfb) ;
++Unifontc8 (/sys/lib/postscript/font/unifont/c8.pfb) ;
++Unifontc9 (/sys/lib/postscript/font/unifont/c9.pfb) ;
++Unifontca (/sys/lib/postscript/font/unifont/ca.pfb) ;
++Unifontcb (/sys/lib/postscript/font/unifont/cb.pfb) ;
++Unifontcc (/sys/lib/postscript/font/unifont/cc.pfb) ;
++Unifontcd (/sys/lib/postscript/font/unifont/cd.pfb) ;
++Unifontce (/sys/lib/postscript/font/unifont/ce.pfb) ;
++Unifontcf (/sys/lib/postscript/font/unifont/cf.pfb) ;
++Unifontd0 (/sys/lib/postscript/font/unifont/d0.pfb) ;
++Unifontd1 (/sys/lib/postscript/font/unifont/d1.pfb) ;
++Unifontd2 (/sys/lib/postscript/font/unifont/d2.pfb) ;
++Unifontd3 (/sys/lib/postscript/font/unifont/d3.pfb) ;
++Unifontd4 (/sys/lib/postscript/font/unifont/d4.pfb) ;
++Unifontd5 (/sys/lib/postscript/font/unifont/d5.pfb) ;
++Unifontd6 (/sys/lib/postscript/font/unifont/d6.pfb) ;
++Unifontd7 (/sys/lib/postscript/font/unifont/d7.pfb) ;
++Unifontf9 (/sys/lib/postscript/font/unifont/f9.pfb) ;
++Unifontfa (/sys/lib/postscript/font/unifont/fa.pfb) ;
++Unifontfb (/sys/lib/postscript/font/unifont/fb.pfb) ;
++Unifontfc (/sys/lib/postscript/font/unifont/fc.pfb) ;
++Unifontfd (/sys/lib/postscript/font/unifont/fd.pfb) ;
++Unifontfe (/sys/lib/postscript/font/unifont/fe.pfb) ;
++Unifontff (/sys/lib/postscript/font/unifont/ff.pfb) ;
+ % Copyright (C) 1996, 1999 Aladdin Enterprises.  All rights reserved.
+ % 
+ % This file is part of Aladdin Ghostscript.
+--- a//sys/lib/postscript/font/fontmap
++++ b//sys/lib/postscript/font/fontmap
+@@ -150,3 +150,226 @@
+ WNCYR10		ams/wncyr10.pfa
+ WNCYSC10		ams/wncysc10.pfa
+ WNCYSS10		ams/wncyss10.pfa
++Unifont00	unifont/00.pfb
++Unifont01	unifont/01.pfb
++Unifont02	unifont/02.pfb
++Unifont03	unifont/03.pfb
++Unifont04	unifont/04.pfb
++Unifont05	unifont/05.pfb
++Unifont06	unifont/06.pfb
++Unifont07	unifont/07.pfb
++Unifont08	unifont/08.pfb
++Unifont09	unifont/09.pfb
++Unifont0a	unifont/0a.pfb
++Unifont0b	unifont/0b.pfb
++Unifont0c	unifont/0c.pfb
++Unifont0d	unifont/0d.pfb
++Unifont0e	unifont/0e.pfb
++Unifont0f	unifont/0f.pfb
++Unifont10	unifont/10.pfb
++Unifont11	unifont/11.pfb
++Unifont12	unifont/12.pfb
++Unifont13	unifont/13.pfb
++Unifont14	unifont/14.pfb
++Unifont15	unifont/15.pfb
++Unifont16	unifont/16.pfb
++Unifont17	unifont/17.pfb
++Unifont18	unifont/18.pfb
++Unifont19	unifont/19.pfb
++Unifont1a	unifont/1a.pfb
++Unifont1b	unifont/1b.pfb
++Unifont1c	unifont/1c.pfb
++Unifont1d	unifont/1d.pfb
++Unifont1e	unifont/1e.pfb
++Unifont1f	unifont/1f.pfb
++Unifont20	unifont/20.pfb
++Unifont21	unifont/21.pfb
++Unifont22	unifont/22.pfb
++Unifont23	unifont/23.pfb
++Unifont24	unifont/24.pfb
++Unifont25	unifont/25.pfb
++Unifont26	unifont/26.pfb
++Unifont27	unifont/27.pfb
++Unifont28	unifont/28.pfb
++Unifont29	unifont/29.pfb
++Unifont2a	unifont/2a.pfb
++Unifont2b	unifont/2b.pfb
++Unifont2c	unifont/2c.pfb
++Unifont2d	unifont/2d.pfb
++Unifont2e	unifont/2e.pfb
++Unifont2f	unifont/2f.pfb
++Unifont30	unifont/30.pfb
++Unifont31	unifont/31.pfb
++Unifont32	unifont/32.pfb
++Unifont33	unifont/33.pfb
++Unifont34	unifont/34.pfb
++Unifont35	unifont/35.pfb
++Unifont36	unifont/36.pfb
++Unifont37	unifont/37.pfb
++Unifont38	unifont/38.pfb
++Unifont39	unifont/39.pfb
++Unifont3a	unifont/3a.pfb
++Unifont3b	unifont/3b.pfb
++Unifont3c	unifont/3c.pfb
++Unifont3d	unifont/3d.pfb
++Unifont3e	unifont/3e.pfb
++Unifont3f	unifont/3f.pfb
++Unifont40	unifont/40.pfb
++Unifont41	unifont/41.pfb
++Unifont42	unifont/42.pfb
++Unifont43	unifont/43.pfb
++Unifont44	unifont/44.pfb
++Unifont45	unifont/45.pfb
++Unifont46	unifont/46.pfb
++Unifont47	unifont/47.pfb
++Unifont48	unifont/48.pfb
++Unifont49	unifont/49.pfb
++Unifont4a	unifont/4a.pfb
++Unifont4b	unifont/4b.pfb
++Unifont4c	unifont/4c.pfb
++Unifont4d	unifont/4d.pfb
++Unifont4e	unifont/4e.pfb
++Unifont4f	unifont/4f.pfb
++Unifont50	unifont/50.pfb
++Unifont51	unifont/51.pfb
++Unifont52	unifont/52.pfb
++Unifont53	unifont/53.pfb
++Unifont54	unifont/54.pfb
++Unifont55	unifont/55.pfb
++Unifont56	unifont/56.pfb
++Unifont57	unifont/57.pfb
++Unifont58	unifont/58.pfb
++Unifont59	unifont/59.pfb
++Unifont5a	unifont/5a.pfb
++Unifont5b	unifont/5b.pfb
++Unifont5c	unifont/5c.pfb
++Unifont5d	unifont/5d.pfb
++Unifont5e	unifont/5e.pfb
++Unifont5f	unifont/5f.pfb
++Unifont60	unifont/60.pfb
++Unifont61	unifont/61.pfb
++Unifont62	unifont/62.pfb
++Unifont63	unifont/63.pfb
++Unifont64	unifont/64.pfb
++Unifont65	unifont/65.pfb
++Unifont66	unifont/66.pfb
++Unifont67	unifont/67.pfb
++Unifont68	unifont/68.pfb
++Unifont69	unifont/69.pfb
++Unifont6a	unifont/6a.pfb
++Unifont6b	unifont/6b.pfb
++Unifont6c	unifont/6c.pfb
++Unifont6d	unifont/6d.pfb
++Unifont6e	unifont/6e.pfb
++Unifont6f	unifont/6f.pfb
++Unifont70	unifont/70.pfb
++Unifont71	unifont/71.pfb
++Unifont72	unifont/72.pfb
++Unifont73	unifont/73.pfb
++Unifont74	unifont/74.pfb
++Unifont75	unifont/75.pfb
++Unifont76	unifont/76.pfb
++Unifont77	unifont/77.pfb
++Unifont78	unifont/78.pfb
++Unifont79	unifont/79.pfb
++Unifont7a	unifont/7a.pfb
++Unifont7b	unifont/7b.pfb
++Unifont7c	unifont/7c.pfb
++Unifont7d	unifont/7d.pfb
++Unifont7e	unifont/7e.pfb
++Unifont7f	unifont/7f.pfb
++Unifont80	unifont/80.pfb
++Unifont81	unifont/81.pfb
++Unifont82	unifont/82.pfb
++Unifont83	unifont/83.pfb
++Unifont84	unifont/84.pfb
++Unifont85	unifont/85.pfb
++Unifont86	unifont/86.pfb
++Unifont87	unifont/87.pfb
++Unifont88	unifont/88.pfb
++Unifont89	unifont/89.pfb
++Unifont8a	unifont/8a.pfb
++Unifont8b	unifont/8b.pfb
++Unifont8c	unifont/8c.pfb
++Unifont8d	unifont/8d.pfb
++Unifont8e	unifont/8e.pfb
++Unifont8f	unifont/8f.pfb
++Unifont90	unifont/90.pfb
++Unifont91	unifont/91.pfb
++Unifont92	unifont/92.pfb
++Unifont93	unifont/93.pfb
++Unifont94	unifont/94.pfb
++Unifont95	unifont/95.pfb
++Unifont96	unifont/96.pfb
++Unifont97	unifont/97.pfb
++Unifont98	unifont/98.pfb
++Unifont99	unifont/99.pfb
++Unifont9a	unifont/9a.pfb
++Unifont9b	unifont/9b.pfb
++Unifont9c	unifont/9c.pfb
++Unifont9d	unifont/9d.pfb
++Unifont9e	unifont/9e.pfb
++Unifont9f	unifont/9f.pfb
++Unifonta0	unifont/a0.pfb
++Unifonta1	unifont/a1.pfb
++Unifonta2	unifont/a2.pfb
++Unifonta3	unifont/a3.pfb
++Unifonta4	unifont/a4.pfb
++Unifonta5	unifont/a5.pfb
++Unifonta6	unifont/a6.pfb
++Unifonta7	unifont/a7.pfb
++Unifonta8	unifont/a8.pfb
++Unifonta9	unifont/a9.pfb
++Unifontaa	unifont/aa.pfb
++Unifontab	unifont/ab.pfb
++Unifontac	unifont/ac.pfb
++Unifontad	unifont/ad.pfb
++Unifontae	unifont/ae.pfb
++Unifontaf	unifont/af.pfb
++Unifontb0	unifont/b0.pfb
++Unifontb1	unifont/b1.pfb
++Unifontb2	unifont/b2.pfb
++Unifontb3	unifont/b3.pfb
++Unifontb4	unifont/b4.pfb
++Unifontb5	unifont/b5.pfb
++Unifontb6	unifont/b6.pfb
++Unifontb7	unifont/b7.pfb
++Unifontb8	unifont/b8.pfb
++Unifontb9	unifont/b9.pfb
++Unifontba	unifont/ba.pfb
++Unifontbb	unifont/bb.pfb
++Unifontbc	unifont/bc.pfb
++Unifontbd	unifont/bd.pfb
++Unifontbe	unifont/be.pfb
++Unifontbf	unifont/bf.pfb
++Unifontc0	unifont/c0.pfb
++Unifontc1	unifont/c1.pfb
++Unifontc2	unifont/c2.pfb
++Unifontc3	unifont/c3.pfb
++Unifontc4	unifont/c4.pfb
++Unifontc5	unifont/c5.pfb
++Unifontc6	unifont/c6.pfb
++Unifontc7	unifont/c7.pfb
++Unifontc8	unifont/c8.pfb
++Unifontc9	unifont/c9.pfb
++Unifontca	unifont/ca.pfb
++Unifontcb	unifont/cb.pfb
++Unifontcc	unifont/cc.pfb
++Unifontcd	unifont/cd.pfb
++Unifontce	unifont/ce.pfb
++Unifontcf	unifont/cf.pfb
++Unifontd0	unifont/d0.pfb
++Unifontd1	unifont/d1.pfb
++Unifontd2	unifont/d2.pfb
++Unifontd3	unifont/d3.pfb
++Unifontd4	unifont/d4.pfb
++Unifontd5	unifont/d5.pfb
++Unifontd6	unifont/d6.pfb
++Unifontd7	unifont/d7.pfb
++Unifontf9	unifont/f9.pfb
++Unifontfa	unifont/fa.pfb
++Unifontfb	unifont/fb.pfb
++Unifontfc	unifont/fc.pfb
++Unifontfd	unifont/fd.pfb
++Unifontfe	unifont/fe.pfb
++Unifontff	unifont/ff.pfb

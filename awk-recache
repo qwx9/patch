@@ -1,0 +1,129 @@
+diff f3ac883d0db6842870cdabd44ed938b92de87d71 uncommitted
+--- a/sys/src/cmd/awk/lib.c
++++ b/sys/src/cmd/awk/lib.c
+@@ -429,7 +429,8 @@
+ 			break;
+ 		}
+ 	}
+-	return i;		
++	releasere(p);
++	return i;
+ }
+ 
+ void recbld(void)	/* create $0 from $1..$NF if necessary */
+--- a/sys/src/cmd/awk/proto.h
++++ b/sys/src/cmd/awk/proto.h
+@@ -35,6 +35,7 @@
+ extern	void	unput(int);
+ extern	void	unputstr(char *);
+ 
++extern	void	releasere(void *);
+ extern	void	*compre(char *);
+ extern	int	hexstr(char **);
+ extern	void	quoted(char **, char **, char *);
+--- a/sys/src/cmd/awk/re.c
++++ b/sys/src/cmd/awk/re.c
+@@ -64,11 +64,24 @@
+ {
+ 	char	*re;
+ 	int	use;
++	int inuse;
+ 	Reprog	*program;
+ } pattern[NPATS];
+ 
+ static int npats;		/* cache fill level */
+ 
++void
++releasere(void *p)
++{
++	int i;
++
++	for (i = 0; i < npats; i++)
++		if (pattern[i].program == p) {
++			pattern[i].inuse--;
++			break;
++		}
++}
++
+ 	/* Compile a pattern */
+ void
+ *compre(char *pat)
+@@ -81,6 +94,7 @@
+ 		for (i = 0; i < npats; i++)
+ 			if (!strcmp(pat, pattern[i].re)) {
+ 				pattern[i].use++;
++				pattern[i].inuse++;
+ 				return((void *) pattern[i].program);
+ 			}
+ 	}
+@@ -162,20 +176,25 @@
+ 		if (npats < NPATS)	/* Room in cache */
+ 			i = npats++;
+ 		else {			/* Throw out least used */
+-			int use = pattern[0].use;
+-			i = 0;
+-			for (j = 1; j < NPATS; j++) {
+-				if (pattern[j].use < use) {
++			int use = -1U;
++			i = -1;
++			for (j = 0; j < NPATS; j++) {
++				if (pattern[j].inuse == 0 && pattern[j].use < use) {
+ 					use = pattern[j].use;
+ 					i = j;
+ 				}
+ 			}
+-			xfree(pattern[i].program);
+-			xfree(pattern[i].re);
++			if (i >= 0) {
++				xfree(pattern[i].program);
++				xfree(pattern[i].re);
++			}
+ 		}
+-		pattern[i].re = tostring(pat);
+-		pattern[i].program = program;
+-		pattern[i].use = 1;
++		if (i >= 0) {
++			pattern[i].re = tostring(pat);
++			pattern[i].program = program;
++			pattern[i].use = 1;
++			pattern[i].inuse = 1;
++		}
+ 	}
+ 	return((void *) program);
+ }
+--- a/sys/src/cmd/awk/run.c
++++ b/sys/src/cmd/awk/run.c
+@@ -608,6 +608,7 @@
+ 		i = pmatch(p, s, s);
+ 	else
+ 		i = match(p, s, s);
++	releasere(p);
+ 	if (istemp(x))
+ 		tfree(x);
+ 	if (n == MATCHFCN) {
+@@ -1324,8 +1325,7 @@
+ 		else
+ 			setsymtab(num, t, 0.0, STR, (Array *) ap->sval);
+   spdone:
+-		p = nil;
+-		USED(p);
++  		releasere(p);
+ 	} else if (sep == ' ') {
+ 		for (n = 0; ; ) {
+ 			while (*s == ' ' || *s == '\t' || *s == '\n')
+@@ -1884,6 +1884,7 @@
+ 		setsval(x, buf);	/* BUG: should be able to avoid copy */
+ 		result = True;;
+ 	}
++	releasere(p);
+ 	if (istemp(x))
+ 		tfree(x);
+ 	if (istemp(y))
+@@ -1981,6 +1982,7 @@
+ 			;
+ 		setsval(x, buf);	/* BUG: should be able to avoid copy + free */
+ 	}
++	releasere(p);
+ 	if (istemp(x))
+ 		tfree(x);
+ 	if (istemp(y))

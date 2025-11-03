@@ -1,0 +1,399 @@
+diff e16f6004ab0807ecce5aa9d894a854a136947349 uncommitted
+--- a/sys/src/cmd/awk/lex.c
++++ b/sys/src/cmd/awk/lex.c
+@@ -103,7 +103,7 @@
+ 	return c;
+ }
+ 
+-int gettok(char **pbuf, int *psz)	/* get next input token */
++static int gettok(char **pbuf, int *psz, Awkfloat *fp)	/* get next input token */
+ {
+ 	int c;
+ 	char *buf = *pbuf;
+@@ -132,6 +132,7 @@
+ 				break;
+ 			}
+ 		}
++		c = 'a';
+ 	} else {	/* it's a number */
+ 		char *rem;
+ 		/* read input until can't be a number */
+@@ -148,13 +149,16 @@
+ 			}
+ 		}
+ 		*bp = 0;
+-		strtod(buf, &rem);	/* parse the number */
++		if(to_number(buf, fp, &rem))	/* parse the number */
++			c = '0';
++		else
++			c = buf[0];
+ 		unputstr(rem);		/* put rest back for later */
+ 		rem[0] = 0;
+ 	}
+ 	*pbuf = buf;
+ 	*psz = sz;
+-	return buf[0];
++	return c;
+ }
+ 
+ int	word(char *);
+@@ -166,6 +170,7 @@
+ int yylex(void)
+ {
+ 	int c;
++	Awkfloat f;
+ 	static char *buf = 0;
+ 	static int bufsize = 500;
+ 
+@@ -180,14 +185,16 @@
+ 		return regexpr();
+ 	}
+ 	for (;;) {
+-		c = gettok(&buf, &bufsize);
++		c = gettok(&buf, &bufsize, &f);
+ 		if (c == 0)
+ 			return 0;
+-		if (isalpha(c) || c == '_')
++		if (c == 'a')
+ 			return word(buf);
+-		if (isdigit(c) || c == '.') {
+-			yylval.cp = setsymtab(buf, tostring(buf), atof(buf), CON|NUM, symtab);
+-			/* should this also have STR set? */
++		/* may be unsuitable for printing (T.strnum) so don't set STR,
++		 * but may be a regex to be treated literally (T.coerce[23])
++		 * via strnode, so save a copy. */
++		if (c == '0') {
++			yylval.cp = setsymtab(buf, tostring(buf), f, CON|NUM, symtab);
+ 			RET(NUMBER);
+ 		}
+ 	
+@@ -297,7 +304,7 @@
+ 	
+ 		case '$':
+ 			/* BUG: awkward, if not wrong */
+-			c = gettok(&buf, &bufsize);
++			c = gettok(&buf, &bufsize, &f);
+ 			if (c == '(' || c == '[' || (infunc && isarg(buf) >= 0)) {
+ 				unputstr(buf);
+ 				RET(INDIRECT);
+@@ -449,7 +456,7 @@
+ 	Keyword *kp;
+ 	int c, n;
+ 
+-	n = binsearch(w, keywords, sizeof(keywords)/sizeof(keywords[0]));
++	n = binsearch(w, keywords, nelem(keywords));
+ 	kp = keywords + n;
+ 	if (n != -1) {	/* found in table */
+ 		yylval.i = kp->sub;
+--- a/sys/src/cmd/awk/lib.c
++++ b/sys/src/cmd/awk/lib.c
+@@ -145,10 +145,8 @@
+ 					xfree(fldtab[0]->sval);
+ 				fldtab[0]->sval = buf;	/* buf == record */
+ 				fldtab[0]->tval = REC | STR | DONTFREE;
+-				if (is_number(fldtab[0]->sval)) {
+-					fldtab[0]->fval = atof(fldtab[0]->sval);
++				if (to_number(fldtab[0]->sval, &fldtab[0]->fval, nil))
+ 					fldtab[0]->tval |= NUM;
+-				}
+ 			}
+ 			setfval(nrloc, nrloc->fval+1);
+ 			setfval(fnrloc, fnrloc->fval+1);
+@@ -237,10 +235,8 @@
+ 	p = qstring(p, '\0');
+ 	q = setsymtab(s, p, 0.0, STR, symtab);
+ 	setsval(q, p);
+-	if (is_number(q->sval)) {
+-		q->fval = atof(q->sval);
++	if (to_number(q->sval, &q->fval, nil))
+ 		q->tval |= NUM;
+-	}
+ 	   dprint( ("command line set %s to |%s|\n", s, p) );
+ }
+ 
+@@ -329,10 +325,8 @@
+ 	donefld = 1;
+ 	for (j = 1; j <= lastfld; j++) {
+ 		p = fldtab[j];
+-		if(is_number(p->sval)) {
+-			p->fval = atof(p->sval);
++		if (to_number(p->sval, &p->fval, nil))
+ 			p->tval |= NUM;
+-		}
+ 	}
+ 	setfval(nfloc, (Awkfloat) lastfld);
+ 	if (dbg) {
+@@ -665,45 +659,81 @@
+ 	return *s == '=' && s > os && *(s+1) != '=';
+ }
+ 
+-/* strtod is supposed to be a proper test of what's a valid number */
++static int is_float(char *s, Awkfloat *fp, char **tp)
++{
++	char c, *p, *q;
++	Awkfloat f;
+ 
+-int is_number(char *s)
++	f = *fp = strtod(s, &p);
++	if (tp != nil)
++		*tp = p;
++	if (p == s)
++		return 0;
++	else if (isInf(f, 1) || isInf(f, -1) || isNaN(f))
++		return 0;
++	else if (f == 0.0 && ((q = strchr(s, '0')) == nil || q > p))
++		return 0;
++	else if (tp != nil)
++		return 1;
++	for (; (c = *p) != '\0'; p++) {
++		switch(c) {
++		case ' ':
++		case '\t':
++		case '\n':
++		case '\f':
++		case '\r':
++		case '\v':
++			continue;
++		case '\0':
++			return 1;
++		default:
++			return 0;
++		}
++	}
++	return 1;
++}
++
++int to_number(char *s, Awkfloat *fp, char **tp)
+ {
+-	double r;
+-	char *ep;
++	vlong v;
++	char c, *p, *q;
+ 
+-	/*
+-	 * fast could-it-be-a-number check before calling strtod,
+-	 * which takes a surprisingly long time to reject non-numbers.
+-	 */
+-	switch (*s) {
+-	case '0': case '1': case '2': case '3': case '4':
+-	case '5': case '6': case '7': case '8': case '9':
+-	case '\t':
+-	case '\n':
+-	case '\v':
+-	case '\f':
+-	case '\r':
+-	case ' ':
+-	case '-':
+-	case '+':
++	v = strtoll(s, &p, 0);
++	*fp = (Awkfloat)v;
++	if (tp != nil)
++		*tp = p;
++	switch(*p){
+ 	case '.':
+-	case 'n':		/* nans */
+-	case 'N':
+-	case 'i':		/* infs */
+-	case 'I':
+-		break;
+-	default:
+-		return 0;	/* can't be a number */
++	case 'E':
++	case 'I':	/* inf */
++	case 'N':	/* nan */
++	case 'e':
++	case 'i':
++	case 'n':
++		if (is_float(s, fp, tp))
++			return NUM;
++		return 0;
+ 	}
+-
+-	r = strtod(s, &ep);
+-	if (ep == s || isInf(r, 1) || isInf(r, -1) || isNaN(r))
++	if (p == s)
+ 		return 0;
+-	while (*ep == ' ' || *ep == '\t' || *ep == '\n')
+-		ep++;
+-	if (*ep == '\0')
+-		return 1;
+-	else
++	else if (v == 0 && ((q = strchr(s, '0')) == nil || q > p))
+ 		return 0;
++	else if (tp != nil)
++		return NUM;
++	for (; (c = *p) != '\0'; p++) {
++		switch(c) {
++		case ' ':
++		case '\t':
++		case '\n':
++		case '\f':
++		case '\r':
++		case '\v':
++			continue;
++		case '\0':
++			return NUM;
++		default:
++			return 0;
++		}
++	}
++	return NUM;
+ }
+--- a/sys/src/cmd/awk/proto.h
++++ b/sys/src/cmd/awk/proto.h
+@@ -117,7 +117,7 @@
+ extern	void	bclass(int);
+ extern	double	errcheck(double, char *);
+ extern	int	isclvar(char *);
+-extern	int	is_number(char *);
++extern	int	to_number(char *, Awkfloat *, char **);
+ 
+ extern	int	adjbuf(char **pb, int *sz, int min, int q, char **pbp, char *what);
+ extern	void	run(Node *);
+--- a/sys/src/cmd/awk/run.c
++++ b/sys/src/cmd/awk/run.c
+@@ -430,10 +430,8 @@
+ 				tfree(x);
+ 		} else {			/* getline <file */
+ 			setsval(fldtab[0], buf);
+-			if (is_number(fldtab[0]->sval)) {
+-				fldtab[0]->fval = atof(fldtab[0]->sval);
++			if (to_number(fldtab[0]->sval, &fldtab[0]->fval, nil))
+ 				fldtab[0]->tval |= NUM;
+-			}
+ 		}
+ 	} else {			/* bare getline; use current input */
+ 		if (a[0] == nil)	/* getline */
+@@ -737,9 +735,11 @@
+ 
+ 	x = execute(a[0]);
+ 	m = (int) getfval(x);
+-	if (m == 0 && !is_number(s = getsval(x)))	/* suspicion! */
+-		FATAL("illegal field $(%s), name \"%s\"", s, x->nval);
+-		/* BUG: can x->nval ever be null??? */
++	if (m == 0) {
++		if (!to_number(s = getsval(x), &x->fval, nil))	/* suspicion! */
++			FATAL("illegal field $(%s), name \"%s\"", s, x->nval);
++			/* BUG: can x->nval ever be null??? */
++	}
+ 	if (istemp(x))
+ 		tfree(x);
+ 	x = fieldadr(m);
+@@ -1264,6 +1264,7 @@
+ 	Cell *x = 0, *y, *ap;
+ 	char *s, *ds, *t, *fs = 0;
+ 	char temp, num[50];
++	Awkfloat f;
+ 	int n, nb, sep, arg3type;
+ 
+ 	y = execute(a[0]);	/* source string */
+@@ -1304,8 +1305,8 @@
+ 				sprint(num, "%d", n);
+ 				temp = *patbeg;
+ 				*patbeg = '\0';
+-				if (is_number(t))
+-					setsymtab(num, t, atof(t), STR|NUM, (Array *) ap->sval);
++				if (to_number(t, &f, nil))
++					setsymtab(num, t, f, STR|NUM, (Array *) ap->sval);
+ 				else
+ 					setsymtab(num, t, 0.0, STR, (Array *) ap->sval);
+ 				*patbeg = temp;
+@@ -1320,8 +1321,8 @@
+ 		}
+ 		n++;
+ 		sprint(num, "%d", n);
+-		if (is_number(t))
+-			setsymtab(num, t, atof(t), STR|NUM, (Array *) ap->sval);
++		if (to_number(t, &f, nil))
++			setsymtab(num, t, f, STR|NUM, (Array *) ap->sval);
+ 		else
+ 			setsymtab(num, t, 0.0, STR, (Array *) ap->sval);
+   spdone:
+@@ -1341,8 +1342,8 @@
+ 			temp = *s;
+ 			*s = '\0';
+ 			sprint(num, "%d", n);
+-			if (is_number(t))
+-				setsymtab(num, t, atof(t), STR|NUM, (Array *) ap->sval);
++			if (to_number(t, &f, nil))
++				setsymtab(num, t, f, STR|NUM, (Array *) ap->sval);
+ 			else
+ 				setsymtab(num, t, 0.0, STR, (Array *) ap->sval);
+ 			*s = temp;
+@@ -1359,8 +1360,8 @@
+ 			nb = chartorune(&r, s);
+ 			memmove(buf, s, nb);
+ 			buf[nb] = '\0';
+-			if (isdigit(buf[0]))
+-				setsymtab(num, buf, atof(buf), STR|NUM, (Array *) ap->sval);
++			if (to_number(buf, &f, nil))
++				setsymtab(num, buf, f, STR|NUM, (Array *) ap->sval);
+ 			else
+ 				setsymtab(num, buf, 0.0, STR, (Array *) ap->sval);
+ 		}
+@@ -1373,8 +1374,8 @@
+ 			temp = *s;
+ 			*s = '\0';
+ 			sprint(num, "%d", n);
+-			if (is_number(t))
+-				setsymtab(num, t, atof(t), STR|NUM, (Array *) ap->sval);
++			if (to_number(t, &f, nil))
++				setsymtab(num, t, f, STR|NUM, (Array *) ap->sval);
+ 			else
+ 				setsymtab(num, t, 0.0, STR, (Array *) ap->sval);
+ 			*s = temp;
+--- a/sys/src/cmd/awk/tran.c
++++ b/sys/src/cmd/awk/tran.c
+@@ -100,6 +100,7 @@
+ 	Cell *cp;
+ 	int i;
+ 	char temp[50];
++	Awkfloat f;
+ 
+ 	AARGC = &setsymtab("ARGC", EMPTY, (Awkfloat) ac, NUM, symtab)->fval;
+ 	cp = setsymtab("ARGV", EMPTY, 0.0, ARR, symtab);
+@@ -107,8 +108,8 @@
+ 	cp->sval = (char *) ARGVtab;
+ 	for (i = 0; i < ac; i++) {
+ 		sprint(temp, "%d", i);
+-		if (is_number(*av))
+-			setsymtab(temp, *av, atof(*av), STR|NUM, ARGVtab);
++		if (to_number(*av, &f, nil))
++			setsymtab(temp, *av, f, STR|NUM, ARGVtab);
+ 		else
+ 			setsymtab(temp, *av, 0.0, STR, ARGVtab);
+ 		av++;
+@@ -120,6 +121,7 @@
+ 	int	fd, i, n;
+ 	char	*k, *v;
+ 	Dir	*buf;
++	Awkfloat f;
+ 
+ 	ENVtab = makesymtab(NSYMTAB);
+ 	if ((fd = open("/env", OREAD)) < 0)
+@@ -133,8 +135,8 @@
+ 				continue;
+ 			if ((v = getenv(k)) == nil)
+ 				continue;
+-			if (is_number(v))
+-				setsymtab(k, v, atof(v), STR|NUM, ENVtab);
++			if (to_number(v, &f, nil))
++				setsymtab(k, v, f, STR|NUM, ENVtab);
+ 			else
+ 				setsymtab(k, v, 0.0, STR, ENVtab);
+ 			free(v);
+@@ -364,9 +366,11 @@
+ 	else if (isrec(vp) && donerec == 0)
+ 		recbld();
+ 	if (!isnum(vp)) {	/* not a number */
+-		vp->fval = atof(vp->sval);	/* best guess */
+-		if (is_number(vp->sval) && !(vp->tval&CON))
+-			vp->tval |= NUM;	/* make NUM only sparingly */
++		vp->fval = 0;
++		if (to_number(vp->sval, &vp->fval, nil)) {
++			if (!(vp->tval&CON))
++				vp->tval |= NUM;	/* make NUM only sparingly */
++		}
+ 	}
+ 	   dprint( ("getfval %p: %s = %g, t=%o\n", vp, vp->nval, vp->fval, vp->tval) );
+ 	return(vp->fval);

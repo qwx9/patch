@@ -1,0 +1,27 @@
+diff c29f9884bb2aba8ac6a2b9286d582ba86dd61ae1 uncommitted
+--- a/unionfs.c
++++ b/unionfs.c
+@@ -268,6 +268,7 @@
+ 	long n;
+ 	Fcall *T, *R;
+ 	FILE *f;
++	Dirlist *dl;
+ 	
+ 	T = &r->ifcall;
+ 	R = &r->ofcall;
+@@ -280,10 +281,13 @@
+ 		if(T->offset == 0){
+ 			if(seek(f->fd, 0, 0) == -1)
+ 				goto error;
++			if((dl = dirlist(f->fd)) == nil)
++				goto error;
++			srvacquire(&thefs);
+ 			if(f->dl != nil)
+ 				dirlistfree(f->dl);
+-			if((f->dl = dirlist(f->fd)) == nil)
+-				goto error;
++			f->dl = dl;
++			srvrelease(&thefs);
+ 		}
+ 		dirread9p(r, dirgen, f->dl);
+ 	}else{

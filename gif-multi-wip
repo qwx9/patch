@@ -1,0 +1,131 @@
+diff 2734fa85452cd5886212183adbb727038a263a98 uncommitted
+--- a/sys/src/cmd/jpg/gif.c
++++ b/sys/src/cmd/jpg/gif.c
+@@ -12,7 +12,8 @@
+ int		nineflag = 0;
+ int		threeflag = 0;
+ int		output = 0;
+-ulong	outchan = CMAP8;
++ulong	outchan = CMAP8, goutchan = CMAP8;
++char	*stem;
+ Image	**allims;
+ int		which;
+ int		defaultcolor = 1;
+@@ -55,6 +56,13 @@
+ }
+ 
+ void
++usage(void)
++{
++	fprint(2, "usage: gif -39cdektv [-s stem] [file.gif ...]\n");
++	exits("usage");
++}
++
++void
+ main(int argc, char *argv[])
+ {
+ 	int fd, i;
+@@ -99,9 +107,11 @@
+ 		if(defaultcolor)
+ 			outchan = CMAP8;
+ 		break;
++	case 's':
++		stem = EARGF(usage());
++		break;
+ 	default:
+-		fprint(2, "usage: gif -39cdektv  [file.gif ...]\n");
+-		exits("usage");
++		usage();
+ 	}ARGEND;
+ 
+ 	err = nil;
+@@ -196,7 +206,7 @@
+ 		i->chans[0] = expand(i->chans[0], i->chanlen/1, 1);
+ 		i->chanlen = 2*(i->chanlen/1);
+ 		i->chandesc = CRGBVA16;
+-		outchan = CHAN2(CMap, 8, CAlpha, 8);
++		goutchan = CHAN2(CMap, 8, CAlpha, 8);
+ 		break;
+ 
+ 	case GREY8:
+@@ -203,7 +213,7 @@
+ 		i->chans[0] = expand(i->chans[0], i->chanlen/1, 1);
+ 		i->chanlen = 2*(i->chanlen/1);
+ 		i->chandesc = CYA16;
+-		outchan = CHAN2(CGrey, 8, CAlpha, 8);
++		goutchan = CHAN2(CGrey, 8, CAlpha, 8);
+ 		break;
+ 
+ 	case RGB24:
+@@ -210,7 +220,7 @@
+ 		i->chans[0] = expand(i->chans[0], i->chanlen/3, 3);
+ 		i->chanlen = 4*(i->chanlen/3);
+ 		i->chandesc = CRGBA32;
+-		outchan = RGBA32;
++		goutchan = RGBA32;
+ 		break;
+ 
+ 	default:
+@@ -235,7 +245,7 @@
+ 	rp = r->chans[0];
+ 	cp = c->chans[0];
+ 	trindex = r->giftrindex;
+-	if(outchan == RGBA32)
++	if(goutchan == RGBA32)
+ 		for(i=0; i<r->chanlen; i++){
+ 			if(*rp == trindex){
+ 				*cp++ = 0x00;
+@@ -285,10 +295,10 @@
+ 	Rectangle r;
+ 	int j, k, n, ch, nloop, loopcount, dt;
+ 	char *err;
+-	char buf[32];
++	char buf[32], path[1024];
+ 
+ 	err = nil;
+-	images = readgif(fd, CRGB, dflag);
++	images = readgif(fd, CRGB, dflag && stem == nil);
+ 	if(images == nil){
+ 		fprint(2, "gif: decode %s failed: %r\n", name);
+ 		return "decode";
+@@ -397,16 +407,30 @@
+ 		draw(screen, screen->clipr, display->white, nil, ZP);
+ 	}
+ 	if(nineflag){
+-		if(images[0]->gifflags&TRANSP){
+-			addalpha(rgbv[0]);
+-			blackout(images[0], rgbv[0]);
+-		}
+-		chantostr(buf, outchan);
+-		print("%11s %11d %11d %11d %11d ", buf,
+-			rgbv[0]->r.min.x, rgbv[0]->r.min.y, rgbv[0]->r.max.x, rgbv[0]->r.max.y);
+-		if(write(1, rgbv[0]->chans[0], rgbv[0]->chanlen) != rgbv[0]->chanlen){
+-			fprint(2, "gif: %s: write error %r\n", name);
+-			return "write";
++		for(k=0; k<n; k++){
++			if(images[k]->gifflags&TRANSP){
++				addalpha(rgbv[k]);
++				blackout(images[k], rgbv[k]);
++			}
++			if(stem != nil){
++				snprint(path, sizeof(path), "%s-%03d", stem, k);
++				if((fd = create(path, OWRITE, 0666)) < 0){
++					fprint(2, "gif: %s: write error %r\n", name);
++					return "write";
++				}
++			}else
++				fd = 1;
++			chantostr(buf, goutchan);
++			fprint(fd, "%11s %11d %11d %11d %11d ", buf,
++				rgbv[k]->r.min.x, rgbv[k]->r.min.y, rgbv[k]->r.max.x, rgbv[k]->r.max.y);
++			if(write(fd, rgbv[k]->chans[0], rgbv[k]->chanlen) != rgbv[k]->chanlen){
++				fprint(2, "gif: %s: write error %r\n", name);
++				return "write";
++			}
++			if(stem != nil)
++				close(fd);
++			else
++				break;
+ 		}
+ 	}else if(cflag){
+ 		if(images[0]->gifflags&TRANSP){

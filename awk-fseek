@@ -1,0 +1,81 @@
+diff 5dcb8d92ff849359a164b7c0d7ecae64594d6db6 uncommitted
+--- a/sys/src/cmd/awk/awk.h
++++ b/sys/src/cmd/awk/awk.h
+@@ -107,6 +107,7 @@
+ #define	FTOLOWER 13
+ #define	FFLUSH	14
+ #define	FUTF	15
++#define	FSEEK	16
+ 
+ /* Node:  parse tree is made of nodes, with Cell's at bottom */
+ 
+--- a/sys/src/cmd/awk/lex.c
++++ b/sys/src/cmd/awk/lex.c
+@@ -58,6 +58,7 @@
+ 	{ "exit",	EXIT,		EXIT },
+ 	{ "exp",	FEXP,		BLTIN },
+ 	{ "fflush",	FFLUSH,		BLTIN },
++	{ "fseek",	FSEEK,		BLTIN },
+ 	{ "for",	FOR,		FOR },
+ 	{ "func",	FUNC,		FUNC },
+ 	{ "function",	FUNC,		FUNC },
+--- a/sys/src/cmd/awk/run.c
++++ b/sys/src/cmd/awk/run.c
+@@ -1533,11 +1533,21 @@
+ 	return True;
+ }
+ 
++struct files {
++	Biobuf	*fp;
++	char	*fname;
++	int	mode;	/* '|', 'a', 'w' => LE/LT, GT */
++} files[FOPEN_MAX] ={
++	{ nil,  "/dev/stdin",  LT },	/* watch out: don't free this! */
++	{ nil, "/dev/stdout", GT },
++	{ nil, "/dev/stderr", GT }
++};
++
+ Cell *bltin(Node **a, int)	/* builtin functions. a[0] is type, a[1] is arg list */
+ {
+ 	Cell *x, *y;
+ 	Awkfloat u;
+-	int t;
++	int i, t;
+ 	Rune wc;
+ 	char *p, *buf;
+ 	char mbc[50];
+@@ -1622,6 +1632,17 @@
+ 		else
+ 			u = Bflush(fp);
+ 		break;
++	case FSEEK:
++		y = execute(nextarg);
++		nextarg = nextarg->nnext;
++		p = getsval(x);
++		t = atoi(getsval(y));
++		for (i = 0; i < FOPEN_MAX; i++)
++			if (files[i].fp && strcmp(p, files[i].fname) == 0){
++				Bseek(files[i].fp, t, 0);
++				break;
++			}
++		break;
+ 	case FUTF:
+ 		wc = (int)getfval(x);
+ 		mbc[runetochar(mbc, &wc)] = 0;
+@@ -1695,16 +1716,6 @@
+ 		tfree(x);
+ 	return fp;
+ }
+-
+-struct files {
+-	Biobuf	*fp;
+-	char	*fname;
+-	int	mode;	/* '|', 'a', 'w' => LE/LT, GT */
+-} files[FOPEN_MAX] ={
+-	{ nil,  "/dev/stdin",  LT },	/* watch out: don't free this! */
+-	{ nil, "/dev/stdout", GT },
+-	{ nil, "/dev/stderr", GT }
+-};
+ 
+ void stdinit(void)	/* in case stdin, etc., are not constants */
+ {

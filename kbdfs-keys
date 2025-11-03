@@ -1,0 +1,229 @@
+diff 2d28717d80571e9469a59098150996b28404709f uncommitted
+--- a/sys/include/keyboard.h
++++ b/sys/include/keyboard.h
+@@ -54,6 +54,9 @@
+ 	Kbrtdn=	KF|0x28,	/* brightness decrement */
+ 	Kbrtup=	KF|0x29,	/* brightness increment */
+ 
++	Krshift=	KF|0x30,
++	Krctl=	KF|0x31,
++
+ 	Ksoh=	0x01,
+ 	Kstx=	0x02,
+ 	Ketx=	0x03,
+--- a/sys/src/cmd/aux/kbdfs/kbdfs.c
++++ b/sys/src/cmd/aux/kbdfs/kbdfs.c
+@@ -167,7 +167,7 @@
+ 	[0x18]	'o',	'p',	'[',	']',	'\n',	Kctl,	'a',	's',
+ 	[0x20]	'd',	'f',	'g',	'h',	'j',	'k',	'l',	';',
+ 	[0x28]	'\'',	'`',	Kshift,	'\\',	'z',	'x',	'c',	'v',
+-	[0x30]	'b',	'n',	'm',	',',	'.',	'/',	Kshift,	'*',
++	[0x30]	'b',	'n',	'm',	',',	'.',	'/',	Krshift,'*',
+ 	[0x38]	Kalt,	' ',	Kctl,	KF|1,	KF|2,	KF|3,	KF|4,	KF|5,
+ 	[0x40]	KF|6,	KF|7,	KF|8,	KF|9,	KF|10,	Knum,	Kscroll,'7',
+ 	[0x48]	'8',	'9',	'-',	'4',	'5',	'6',	'+',	'1',
+@@ -187,7 +187,7 @@
+ 	[0x18]	'O',	'P',	'{',	'}',	'\n',	Kctl,	'A',	'S',
+ 	[0x20]	'D',	'F',	'G',	'H',	'J',	'K',	'L',	':',
+ 	[0x28]	'"',	'~',	Kshift,	'|',	'Z',	'X',	'C',	'V',
+-	[0x30]	'B',	'N',	'M',	'<',	'>',	'?',	Kshift,	'*',
++	[0x30]	'B',	'N',	'M',	'<',	'>',	'?',	Krshift,'*',
+ 	[0x38]	Kalt,	' ',	Kctl,	KF|1,	KF|2,	KF|3,	KF|4,	KF|5,
+ 	[0x40]	KF|6,	KF|7,	KF|8,	KF|9,	KF|10,	Knum,	Kscroll,'7',
+ 	[0x48]	'8',	'9',	'-',	'4',	'5',	'6',	'+',	'1',
+@@ -204,7 +204,7 @@
+ 	[0x00]	0,	0,	0,	0,	0,	0,	0,	0,
+ 	[0x08]	0,	0,	0,	0,	0,	0,	0,	0,
+ 	[0x10]	Ksbwd,	Kbrtdn,	0,	0,	0,	0,	0,	0,
+-	[0x18]	0,	Ksfwd,	Kbrtup,	0,	'\n',	Kctl,	0,	0,
++	[0x18]	0,	Ksfwd,	Kbrtup,	0,	'\n',	Krctl,	0,	0,
+ 	[0x20]	Kmute,	0,	Kpause,	0,	0,	0,	0,	0,
+ 	[0x28]	0,	0,	0,	0,	0,	0,	Kvoldn,	0,
+ 	[0x30]	Kvolup,	0,	0,	0,	0,	'/',	0,	Kprint,
+@@ -224,7 +224,7 @@
+ 	[0x00]	0,	0,	0,	0,	0,	0,	0,	0,
+ 	[0x08]	0,	0,	0,	0,	0,	0,	0,	0,
+ 	[0x10]	0,	0,	0,	0,	0,	0,	0,	0,
+-	[0x18]	0,	0,	0,	0,	0,	0,	0,	0,
++	[0x18]	0,	0,	0,	0,	0,	Krctl,	0,	0,
+ 	[0x20]	0,	0,	0,	0,	0,	0,	0,	0,
+ 	[0x28]	0,	0,	0,	0,	0,	0,	0,	0,
+ 	[0x30]	0,	0,	0,	0,	0,	0,	0,	0,
+@@ -244,7 +244,7 @@
+ 	[0x00]	0,	0,	0,	0,	0,	0,	0,	0,
+ 	[0x08]	0,	0,	0,	0,	0,	0,	0,	0,
+ 	[0x10]	0,	0,	0,	0,	0,	0,	0,	0,
+-	[0x18]	0,	0,	0,	0,	0,	0,	0,	0,
++	[0x18]	0,	0,	0,	0,	0,	Krctl,	0,	0,
+ 	[0x20]	0,	0,	0,	0,	0,	0,	0,	0,
+ 	[0x28]	0,	0,	0,	0,	0,	0,	0,	0,
+ 	[0x30]	0,	0,	0,	0,	0,	0,	0,	0,
+@@ -487,9 +487,11 @@
+ 
+ 	switch(key.r){
+ 	case Kshift:
++	case Krshift:
+ 		scan->shift = key.down;
+ 		break;
+ 	case Kctl:
++	case Krctl:
+ 		scan->ctl = key.down;
+ 		break;
+ 	case Kaltgr:
+@@ -566,13 +568,13 @@
+ 		/* button unknown to kbtab, use rune if no modifier keys are active */
+ 		if(k.b == 0 && !a->shift && !a->altgr && !a->ctl)
+ 			k.b = k.r;
+-		if(k.r == Kshift)
++		if(k.r == Kshift || k.r == Krshift)
+ 			a->shift = k.down;
+ 		else if(k.r == Kaltgr)
+ 			a->altgr = k.down;
+ 		else if(k.r == Kmod4)
+ 			a->mod4 = k.down;
+-		else if(k.r == Kctl)
++		else if(k.r == Kctl || k.r == Krctl)
+ 			a->ctl = k.down;
+ 		send(keychan, &k);
+ 		break;
+@@ -765,6 +767,7 @@
+ 		case Kcaps:
+ 		case Knum:
+ 		case Kshift:
++		case Krshift:
+ 		case Kaltgr:
+ 		case Kmod4:
+ 			/* ignore modifiers */
+@@ -771,6 +774,7 @@
+ 			continue;
+ 
+ 		case Kctl:
++		case Krctl:
+ 		case Kalt:
+ 			/* composing escapes */
+ 			return 1;
+@@ -809,7 +813,7 @@
+ 			continue;
+ 		}
+ 
+-		if(r == Kctl){
++		if(r == Kctl || r == Krctl){
+ 			ctl = 1;
+ 			continue;
+ 		}
+@@ -907,7 +911,7 @@
+ 				break;
+ 		}
+ 
+-		if(mctlfd >= 0 && key.r == Kshift){
++		if(mctlfd >= 0 && (key.r == Kshift || key.r == Krshift)){
+ 			if(key.down){
+ 				fprint(mctlfd, "buttonmap 132");
+ 			} else {
+--- a/sys/src/cmd/evdump.c
++++ b/sys/src/cmd/evdump.c
+@@ -64,7 +64,9 @@
+ 	case Kpgdown: return "Kpgdown";
+ 	case Kpgup: return "Kpgup";
+ 	case Kprint: return "Kprint";
++	case Krctl: return "Krctl";
+ 	case Kright: return "Kright";
++	case Krshift: return "Krshift";
+ 	case Kscroll: return "Kscroll";
+ 	case Kscrollonedown: return "Kscrollonedown";
+ 	case Kscrolloneup: return "Kscrolloneup";
+--- a/sys/src/cmd/rio/wind.c
++++ b/sys/src/cmd/rio/wind.c
+@@ -854,6 +854,8 @@
+ 	case Kalt:
+ 	case Kctl:
+ 	case Kaltgr:
++	case Krctl:
++	case Krshift:
+ 		return;
+ 	}
+ 
+--- a/sys/src/cmd/riow.c
++++ b/sys/src/cmd/riow.c
+@@ -405,7 +405,7 @@
+ 		mod = 0;
+ 		if(utfrune(s+1, Kmod4) != nil)
+ 			mod |= Mmod4;
+-		if(utfrune(s+1, Kctl) != nil)
++		if(utfrune(s+1, Kctl) != nil || utfrune(s+1, Krctl) != nil)
+ 			mod |= Mctl;
+ 		if(utfrune(s+1, Kshift) != nil)
+ 			mod |= Mshift;
+--- a/sys/src/cmd/vnc/kbds.c
++++ b/sys/src/cmd/vnc/kbds.c
+@@ -39,7 +39,7 @@
+ [0xc8]	0,	0,	0,	0,	0,	0,	0,	0,
+ [0xd0]	0,	0,	0,	0,	0,	0,	0,	0,
+ [0xd8]	0,	0,	0,	0,	0,	0,	0,	0,
+-[0xe0]	0,	Kshift,	Kshift,	Kctl,	Kctl,	Kcaps,	Kcaps,	0,
++[0xe0]	0,	Kshift,	Krshift,	Kctl,	Krctl,	Kcaps,	Kcaps,	0,
+ [0xe8]	0,	Kalt,	Kalt,	0,	0,	0,	0,	0,
+ [0xf0]	0,	0,	0,	0,	0,	0,	0,	0,
+ [0xf8]	0,	0,	0,	0,	0,	0,	0,	Kdel,
+--- a/sys/src/cmd/vnc/kbdv.c
++++ b/sys/src/cmd/vnc/kbdv.c
+@@ -4,7 +4,9 @@
+ 
+ enum {
+ 	Xshift = 0xFFE1,
++	Xrshift = 0xFFE2,
+ 	Xctl = 0xFFE3,
++	Xrctl = 0xFFE4,
+ 	Xmeta = 0xFFE7,
+ 	Xalt = 0xFFE9,
+ 	Xsuper = 0xFFEB,
+@@ -44,10 +46,12 @@
+ 	{KF|12,	0xffc9},
+ 
+ 	{Kshift, Xshift},
++	{Krshift, Xrshift},
+ 	{Kalt, Xalt},
+ 	{Kaltgr, Xmeta},
+ 	{Kmod4, Xsuper},
+ 	{Kctl, Xctl},
++	{Krctl, Xrctl},
+ };
+ 
+ static char shiftkey[128] = {
+@@ -129,10 +133,12 @@
+ 			keyevent(v, Xalt, alt);
+ 			break;
+ 		case Kctl:
++		case Krctl:
+ 			ctl = !ctl;
+ 			keyevent(v, Xctl, ctl);
+ 			break;
+ 		case Kshift:
++		case Krshift:
+ 			shift = !shift;
+ 			keyevent(v, Xshift, shift);
+ 			break;
+@@ -236,7 +242,9 @@
+ 				s += chartorune(&r, s);
+ 				if(utfrune(buf2+1, r) == nil)
+ 					if((r == Kshift) ||
++					   utfrune(buf+1, Krshift) || 
+ 					   utfrune(buf+1, Kctl) || 
++					   utfrune(buf+1, Krctl) || 
+ 					   utfrune(buf+1, Kalt) ||
+ 					   utfrune(buf+1, Kmod4) ||
+ 					   utfrune(buf+1, Kaltgr))
+--- a/sys/src/games/doom/i_video.c
++++ b/sys/src/games/doom/i_video.c
+@@ -218,9 +218,9 @@
+ 	case Kdown:
+ 		return KEY_DOWNARROW;
+ 
+-	case Kshift:
++	case Krshift:
+ 		return KEY_RSHIFT;
+-	case Kctl:
++	case Krctl:
+ 		return KEY_RCTRL;
+ 	case Kalt:
+ 		return KEY_LALT;
